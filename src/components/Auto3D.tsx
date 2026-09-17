@@ -1,6 +1,6 @@
 "use client";
-import { Component, Suspense, useMemo, useRef } from "react";
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Component, Suspense, useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { ContactShadows, Html, OrbitControls, RoundedBox, Outlines, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { SlotState } from "@/lib/state";
@@ -17,7 +17,7 @@ function useLabelTexture(title: string, sub: string) {
     const g = c.getContext("2d")!;
     g.fillStyle = CREAM; g.fillRect(0, 0, 512, 256);
     for (let x = 4; x < 512; x += 10) for (let y = 4; y < 256; y += 10) { g.fillStyle = "rgba(27,31,92,.08)"; g.beginPath(); g.arc(x, y, 1.2, 0, 7); g.fill(); }
-    g.fillStyle = "#1b1f5c"; g.font = "bold 64px 'Titan One', Impact, sans-serif"; g.textAlign = "center"; g.fillText(title, 256, 128);
+    g.fillStyle = "#1b1f5c"; g.font = "bold 58px 'Titan One', Impact, sans-serif"; g.textAlign = "center"; g.fillText(title, 256, 124);
     g.fillStyle = PINK; g.font = "36px Kalam, cursive"; g.fillText(sub, 256, 190);
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
     return t;
@@ -122,13 +122,13 @@ function Rickshaw({ tint, slots, onPick }: { tint: string; slots: AutoSlots; onP
         <mesh position={[0, 1.02, 0]}><boxGeometry args={[0.3, 0.55, 0.42]} /><meshToonMaterial color={TEAL} /><Outlines thickness={0.015} color={INK} /></mesh>
         <mesh position={[0, 1.45, 0]}><sphereGeometry args={[0.16, 20, 16]} /><meshToonMaterial color="#c68642" /><Outlines thickness={0.015} color={INK} /></mesh>
         {/* tee front */}
-        <SlotFace slot={slots.tee} w={0.3} h={0.34} position={[0.16, 1.04, 0]} rotation={[0, Math.PI / 2, 0]} title="TEE" sub="driver" onPick={onPick} occlude />
-        <SlotLabel slot={slots.tee} title="DRIVER TEE" onPick={onPick} position={[0.3, 1.05, 1.0]} />
+        <SlotFace slot={slots.tee} w={0.3} h={0.34} position={[0.16, 1.04, 0]} rotation={[0, Math.PI / 2, 0]} title="YOUR LOGO" sub="tee" onPick={onPick} occlude />
+        <SlotLabel slot={slots.tee} title="THE TEE" onPick={onPick} position={[0.3, 1.05, 1.0]} />
       </group>
       {/* garland on rear */}
       <mesh position={[-1.17, 1.9, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.62, 0.035, 8, 24, Math.PI]} /><meshToonMaterial color="#f5a524" /></mesh>
       {/* hood slot: rear of canopy */}
-      <SlotFace slot={slots.hood} w={1.2} h={0.66} position={[-1.16, 1.44, 0]} rotation={[0, -Math.PI / 2, 0]} title="YOUR LOGO" sub="the hood · 8–9 sq ft" onPick={onPick} />
+      <SlotFace slot={slots.hood} w={1.2} h={0.66} position={[-1.16, 1.44, 0]} rotation={[0, -Math.PI / 2, 0]} title="YOUR LOGO HERE" sub="tap to take the hood" onPick={onPick} />
       {/* plate */}
       <Html position={[-1.2, 0.42, 0]} center transform rotation={[0, -Math.PI / 2, 0]} scale={0.25} style={{ pointerEvents: "none" }}>
         <div className="font-display text-ink bg-cream border-2 border-ink px-2 rounded text-[10px]">HORN OK PLEASE</div>
@@ -181,11 +181,11 @@ function GlbRickshaw({ slots, onPick, name }: { slots: AutoSlots; onPick: (s: Sl
       )}
       <SlotFace slot={slots.hood} w={L * MODEL_CFG.hood.w} h={H * MODEL_CFG.hood.h}
         position={[rearX - MODEL_CFG.hood.xInset, H * MODEL_CFG.hood.y, 0]} rotation={[0, -Math.PI / 2, 0]}
-        title="YOUR LOGO" sub="the hood · 8–9 sq ft" onPick={onPick} />
+        title="YOUR LOGO HERE" sub="tap to take the hood" onPick={onPick} />
       <SlotFace slot={slots.tee} w={L * MODEL_CFG.tee.w} h={H * MODEL_CFG.tee.h}
         position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * MODEL_CFG.tee.z]} rotation={[0, Math.PI / 2, 0]}
-        title="TEE" sub="driver" onPick={onPick} occlude />
-      <SlotLabel slot={slots.tee} title="DRIVER TEE" onPick={onPick} position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * 0.75]} />
+        title="YOUR LOGO" sub="tee" onPick={onPick} occlude />
+      <SlotLabel slot={slots.tee} title="THE TEE" onPick={onPick} position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * 0.75]} />
     </group>
   );
 }
@@ -210,6 +210,18 @@ function debugCam(): [number, number, number] | null {
   return c === "rear" ? [-d, 1.6, 0.01] : c === "front" ? [d, 1.6, 0.01] : c === "side" ? [0.01, 1.6, d] : c === "top" ? [0.01, d + 1, 0.01] : null;
 }
 
+/** Pull the camera back on narrow viewports so the auto (and its tags) fit. */
+function FitCamera({ base }: { base: [number, number, number] }) {
+  const { camera, size } = useThree();
+  useEffect(() => {
+    const aspect = size.width / Math.max(size.height, 1);
+    const k = aspect < 0.8 ? 1.75 : aspect < 1.2 ? 1.35 : 1;
+    camera.position.set(base[0] * k, base[1] * k * 0.95, base[2] * k);
+    camera.lookAt(0, 0.9, 0);
+  }, [camera, size, base]);
+  return null;
+}
+
 function Turntable({ children, speed = 0.15 }: { children: React.ReactNode; speed?: number }) {
   const ref = useRef<THREE.Group>(null);
   const frozen = !!debugCam();
@@ -220,12 +232,15 @@ function Turntable({ children, speed = 0.15 }: { children: React.ReactNode; spee
 export function Auto3D({ autos, onPick, className }: { autos: { id: string; name?: string; tint: string; slots: AutoSlots }[]; onPick: (s: SlotState) => void; className?: string }) {
   const gap = 3.4;
   const dbg = debugCam();
+  const base: [number, number, number] = dbg ?? (autos.length > 1 ? [-6.8, 2.6, 2.4] : [-4.4, 1.7, 2.6]);
   return (
     <div className={className ?? "w-full h-[400px] sm:h-[520px]"}>
-      <Canvas shadows dpr={[1, 1.75]} camera={{ position: dbg ?? (autos.length > 1 ? [-6.8, 2.6, 2.4] : [-4.6, 1.9, 2.2]), fov: 36 }} gl={{ antialias: true, alpha: true }}>
+      <Canvas shadows dpr={[1, 1.75]} camera={{ position: base, fov: 36 }} gl={{ antialias: true, alpha: true }}>
+        {!dbg && <FitCamera base={base} />}
         <ambientLight intensity={0.9} />
         <directionalLight position={[4, 7, 3]} intensity={1.4} castShadow />
-        <directionalLight position={[-5, 3, -3]} intensity={0.5} color="#e63e8b" />
+        <directionalLight position={[-5, 3, -3]} intensity={0.9} color="#e63e8b" />
+        <pointLight position={[-3, 1.5, 2]} intensity={6} color="#f5a524" distance={9} />
         {autos.map((a, i) => (
           <group key={a.id} position={[0, 0, (i - (autos.length - 1) / 2) * gap]}>
             <Turntable speed={0.18}>
@@ -233,8 +248,8 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; name
             </Turntable>
           </group>
         ))}
-        <ContactShadows position={[0, 0.02, 0]} opacity={0.6} scale={12} blur={2.2} far={3} color="#000" />
-        <OrbitControls target={[0, 1.0, 0]} enablePan={false} minDistance={3} maxDistance={9} minPolarAngle={0.6} maxPolarAngle={1.5} />
+        <ContactShadows position={[0, 0.02, 0]} opacity={0.75} scale={10} blur={2.4} far={3} color="#000" />
+        <OrbitControls target={[0, 0.9, 0]} enablePan={false} minDistance={3} maxDistance={12} minPolarAngle={0.6} maxPolarAngle={1.5} />
       </Canvas>
     </div>
   );
