@@ -1,0 +1,41 @@
+/**
+ * One-time Dodo setup. Needs DODO_PAYMENTS_API_KEY (+ DODO_PAYMENTS_ENVIRONMENT) in env.
+ *   npx tsx --env-file=.env.local scripts/dodo-setup.ts https://your-host.vercel.app
+ * Creates a pay-what-you-want product (min $1) used for every slot with a per-checkout amount,
+ * and a webhook for payment.succeeded. Prints IDs; the webhook secret is written to .dodo-secret (gitignored).
+ */
+import DodoPayments from "dodopayments";
+import { writeFileSync } from "node:fs";
+
+const host = process.argv[2];
+const client = new DodoPayments({
+  bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
+  environment: (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") || "test_mode",
+});
+
+async function main() {
+  if (!process.env.DODO_PAYMENTS_API_KEY) throw new Error("DODO_PAYMENTS_API_KEY missing");
+  let productId = process.env.DODO_PRODUCT_ID;
+  if (!productId) {
+    const product = await client.products.create({
+      name: "Sponsor My Auto — slot",
+      description: "One ad slot on a Bengaluru auto rickshaw for 30 days. Amount set per slot at checkout.",
+      tax_category: "digital_products",
+      price: { type: "one_time_price", currency: "USD", price: 100, pay_what_you_want: true, suggested_price: 120000 },
+    });
+    productId = product.product_id;
+    console.log("DODO_PRODUCT_ID=" + productId);
+  } else console.log("product exists:", productId);
+
+  if (host) {
+    const url = `${host.replace(/\/$/, "")}/api/webhooks/dodo`;
+    const existing = await client.webhooks.list();
+    const found = existing.data?.find((w) => w.url === url);
+    const wh = found ?? (await client.webhooks.create({ url, filter_types: ["payment.succeeded"] }));
+    const secret = await client.webhooks.retrieveSecret(wh.id);
+    writeFileSync(".dodo-secret", secret.secret + "\n", { mode: 0o600 });
+    console.log("webhook:", wh.id, url);
+    console.log("secret written to .dodo-secret (not printed)");
+  } else console.log("no host given; skipped webhook");
+}
+main().catch((e) => { console.error(e); process.exit(1); });

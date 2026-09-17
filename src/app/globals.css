@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink: #0f1133;
+  --color-indigo: #1b1f5c;
+  --color-indigo-2: #262c7a;
+  --color-marigold: #f5a524;
+  --color-pink: #e63e8b;
+  --color-teal: #0e8c8c;
+  --color-cream: #faf3e0;
+  --color-paper: #f3e7c9;
+  --font-display: var(--font-titan), system-ui, sans-serif;
+  --font-accent: var(--font-kalam), cursive;
+  --font-body: var(--font-inter), system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+html { background: var(--color-ink); color: var(--color-cream); }
+body { font-family: var(--font-body); }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+.font-display { font-family: var(--font-display); letter-spacing: 0.01em; }
+.font-accent { font-family: var(--font-accent); }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* halftone + paper texture */
+.halftone {
+  background-image: radial-gradient(rgba(250, 243, 224, 0.10) 1px, transparent 1.4px);
+  background-size: 7px 7px;
 }
+.paper {
+  background-color: var(--color-cream);
+  background-image:
+    radial-gradient(rgba(27, 31, 92, 0.06) 1px, transparent 1.2px),
+    linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0));
+  background-size: 5px 5px, 100% 100%;
+  color: var(--color-ink);
+}
+.ink-border { box-shadow: 0 0 0 3px var(--color-ink), 6px 6px 0 0 var(--color-ink); }
+.ink-border-soft { box-shadow: 0 0 0 3px var(--color-ink); }
+.stripe {
+  background: repeating-linear-gradient(90deg, var(--color-marigold) 0 28px, var(--color-ink) 28px 36px, var(--color-pink) 36px 64px, var(--color-ink) 64px 72px, var(--color-teal) 72px 100px, var(--color-ink) 100px 108px);
+}
+.road {
+  background: repeating-linear-gradient(90deg, var(--color-marigold) 0 22px, transparent 22px 40px);
+  height: 4px;
+}
+.sticker {
+  transform: rotate(-6deg);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+.outline-text {
+  -webkit-text-stroke: 2px var(--color-ink);
+  text-shadow: 4px 4px 0 var(--color-ink);
+}
+@keyframes wobble { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-1.2deg) } 75% { transform: rotate(1.2deg) } }
+.hover-wobble:hover { animation: wobble .6s ease-in-out; }
+@keyframes flip { 0% { transform: rotateX(90deg); opacity: 0 } 100% { transform: rotateX(0); opacity: 1 } }
+.flip-in { animation: flip .35s ease-out; transform-origin: top; }
