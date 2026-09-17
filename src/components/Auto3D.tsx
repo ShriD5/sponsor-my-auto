@@ -149,14 +149,14 @@ function Rickshaw({ tint, slots, onPick }: { tint: string; slots: { hood: SlotSt
  */
 export const MODEL_CFG = {
   url: "/models/auto.glb",
-  yaw: 0,                 // radians to rotate the raw model so its nose points +x
+  yaw: Math.PI / 2,       // raw model nose points +z; rotate so it points +x
   length: 2.6,
-  hood: { y: 0.72, w: 0.46, h: 0.26, xInset: 0.005 },   // rear face, fractions of H (y) and L (w) / H (h)
-  back: { y: 0.36, w: 0.40, h: 0.15, xInset: 0.005 },
+  hood: { y: 0.70, w: 0.34, h: 0.21, xInset: 0.01 },   // rear face, fractions of H (y) and L (w) / H (h)
+  back: { y: 0.33, w: 0.30, h: 0.11, xInset: 0.01 },
   tee:  { x: 0.18, y: 0.55, z: 0, w: 0.12, h: 0.14 },   // fractions of L (x), H (y), W (z)
 };
 
-function GlbRickshaw({ slots, onPick }: { slots: AutoSlots; onPick: (s: SlotState) => void }) {
+function GlbRickshaw({ slots, onPick, name }: { slots: AutoSlots; onPick: (s: SlotState) => void; name?: string }) {
   const { scene } = useGLTF(MODEL_CFG.url);
   const { obj, L, H, W } = useMemo(() => {
     const obj = scene.clone(true);
@@ -177,6 +177,11 @@ function GlbRickshaw({ slots, onPick }: { slots: AutoSlots; onPick: (s: SlotStat
   return (
     <group>
       <primitive object={obj} />
+      {name && (
+        <Html position={[0, H + 0.25, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+          <div className="sticker whitespace-nowrap bg-pink text-cream px-3 py-0.5 rounded text-sm border-2 border-ink shadow-[3px_3px_0_#0f1133]">{name}</div>
+        </Html>
+      )}
       <SlotFace slot={slots.hood} w={L * MODEL_CFG.hood.w} h={H * MODEL_CFG.hood.h}
         position={[rearX - MODEL_CFG.hood.xInset, H * MODEL_CFG.hood.y, 0]} rotation={[0, -Math.PI / 2, 0]}
         title="YOUR LOGO" sub="hood · 8–9 sq ft" onPick={onPick} />
@@ -193,40 +198,49 @@ function GlbRickshaw({ slots, onPick }: { slots: AutoSlots; onPick: (s: SlotStat
 
 /** Uses the real GLB when present, falls back to the procedural auto if it is missing or fails to load. */
 const HAS_MODEL = process.env.NEXT_PUBLIC_AUTO_MODEL === "1";
-function AutoModel({ tint, slots, onPick }: { tint: string; slots: AutoSlots; onPick: (s: SlotState) => void }) {
+function AutoModel({ tint, slots, onPick, name }: { tint: string; slots: AutoSlots; onPick: (s: SlotState) => void; name?: string }) {
   if (!HAS_MODEL) return <Rickshaw tint={tint} slots={slots} onPick={onPick} />;
   return (
     <TexBoundary fallback={<Rickshaw tint={tint} slots={slots} onPick={onPick} />}>
       <Suspense fallback={null}>
-        <GlbRickshaw slots={slots} onPick={onPick} />
+        <GlbRickshaw slots={slots} onPick={onPick} name={name} />
       </Suspense>
     </TexBoundary>
   );
 }
 
+function debugCam(): [number, number, number] | null {
+  if (typeof window === "undefined") return null;
+  const c = new URLSearchParams(window.location.search).get("cam");
+  const d = 6;
+  return c === "rear" ? [-d, 1.6, 0.01] : c === "front" ? [d, 1.6, 0.01] : c === "side" ? [0.01, 1.6, d] : c === "top" ? [0.01, d + 1, 0.01] : null;
+}
+
 function Turntable({ children, speed = 0.15 }: { children: React.ReactNode; speed?: number }) {
   const ref = useRef<THREE.Group>(null);
-  useFrame((_, dt) => { if (ref.current) ref.current.rotation.y += dt * speed; });
+  const frozen = !!debugCam();
+  useFrame((_, dt) => { if (ref.current && !frozen) ref.current.rotation.y += dt * speed; });
   return <group ref={ref}>{children}</group>;
 }
 
-export function Auto3D({ autos, onPick, className }: { autos: { id: string; tint: string; slots: AutoSlots }[]; onPick: (s: SlotState) => void; className?: string }) {
-  const gap = 2.6;
+export function Auto3D({ autos, onPick, className }: { autos: { id: string; name?: string; tint: string; slots: AutoSlots }[]; onPick: (s: SlotState) => void; className?: string }) {
+  const gap = 3.4;
+  const dbg = debugCam();
   return (
     <div className={className ?? "w-full h-[420px] sm:h-[520px]"}>
-      <Canvas shadows dpr={[1, 1.75]} camera={{ position: [-4.9, 2.1, 3.7], fov: 36 }} gl={{ antialias: true, alpha: true }}>
+      <Canvas shadows dpr={[1, 1.75]} camera={{ position: dbg ?? [-6.6, 2.7, 4.2], fov: 36 }} gl={{ antialias: true, alpha: true }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[4, 7, 3]} intensity={1.4} castShadow />
         <directionalLight position={[-5, 3, -3]} intensity={0.5} color="#e63e8b" />
         <Turntable>
           {autos.map((a, i) => (
-            <group key={a.id} position={[0, 0, (i - (autos.length - 1) / 2) * gap]} rotation={[0, 0.25, 0]}>
-              <AutoModel tint={a.tint} slots={a.slots} onPick={onPick} />
+            <group key={a.id} position={[0, 0, (i - (autos.length - 1) / 2) * gap]} rotation={[0, dbg ? 0 : 0.25, 0]}>
+              <AutoModel tint={a.tint} slots={a.slots} onPick={onPick} name={a.name} />
             </group>
           ))}
         </Turntable>
         <ContactShadows position={[0, 0.02, 0]} opacity={0.6} scale={12} blur={2.2} far={3} color="#000" />
-        <OrbitControls target={[0, 1.0, 0]} enablePan={false} minDistance={3.5} maxDistance={9} minPolarAngle={0.6} maxPolarAngle={1.5} />
+        <OrbitControls target={[0, 1.0, 0]} enablePan={false} minDistance={4} maxDistance={11} minPolarAngle={0.6} maxPolarAngle={1.5} />
       </Canvas>
     </div>
   );

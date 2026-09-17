@@ -68,7 +68,7 @@ export function Board({ initial }: { initial: State }) {
       <section id="autos" className="max-w-6xl mx-auto px-4 pb-6">
         <div className="paper rounded-2xl ink-border overflow-hidden relative">
           <div className="absolute top-3 left-4 z-10 font-accent text-ink/70 text-sm">drag to spin · tap a part to buy it</div>
-          <Auto3D autos={AUTOS.map((a) => ({ id: a.id, tint: TINT[a.id], slots: { hood: slot(`${a.id}-hood`), back: slot(`${a.id}-back`), tee: slot(`${a.id}-tee`) } }))} onPick={(s) => !closed && setOpen(s)} />
+          <Auto3D autos={AUTOS.map((a) => ({ id: a.id, name: a.name, tint: TINT[a.id], slots: { hood: slot(`${a.id}-hood`), back: slot(`${a.id}-back`), tee: slot(`${a.id}-tee`) } }))} onPick={(s) => !closed && setOpen(s)} />
         </div>
       </section>
       <div className="road max-w-6xl mx-auto" />
@@ -191,6 +191,7 @@ export function Board({ initial }: { initial: State }) {
         <div className="stripe h-2 mb-6 max-w-xs mx-auto rounded" />
         Built by Shrithan · <a className="underline decoration-marigold" href="https://x.com/" target="_blank" rel="noopener">@handle</a> · Month 2 opens after wrap day
         {state.mock && <div className="mt-2 text-pink">test mode: payments are mocked</div>}
+        <div className="mt-3 text-xs text-cream/50">3D model: <a className="underline" href="https://skfb.ly/oKDIs" target="_blank" rel="noopener">&quot;Tuk Tuk Rikshaw&quot;</a> by alnmathew, <a className="underline" href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></div>
       </footer>
 
       {open && <SlotModal slot={open} onClose={() => setOpen(null)} />}
