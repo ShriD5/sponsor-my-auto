@@ -50,7 +50,7 @@ export function Board({ initial }: { initial: State }) {
         </div>
 
         {/* headline */}
-        <div className="relative z-10 px-5 sm:px-8 pt-6 sm:pt-10 pointer-events-none sm:flex-1">
+        <div className="relative z-10 px-5 sm:px-8 pt-6 sm:pt-10 pointer-events-none sm:flex-1 lg:max-w-[46%]">
           <h1 className="font-display huge text-cream">
             <span className="block rise rise-1">YOUR LOGO.</span>
             <span className="block rise rise-2 stroke">ON AN AUTO.</span>
@@ -59,7 +59,7 @@ export function Board({ initial }: { initial: State }) {
         </div>
 
         {/* the auto: stacked on mobile, full-bleed behind the type from sm up */}
-        <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[30%] sm:z-0">
+        <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[44%] sm:z-0">
           <Auto3D autos={[{ id: AUTO.id, tint: "#f5a524", slots: { hood, tee } }]} onPick={pick} className="w-full h-full" />
         </div>
 
@@ -83,7 +83,7 @@ export function Board({ initial }: { initial: State }) {
             <Countdown endsAt={state.saleEndsAt} />
           </div>
         </div>
-        <div className="absolute z-10 top-1/2 right-5 hidden lg:block font-accent text-cream/50 text-sm rotate-90 origin-right pointer-events-none">drag to spin · tap the hood</div>
+        <div className="absolute z-10 top-6 right-8 hidden lg:block font-accent text-cream/60 text-sm pointer-events-none mt-12">← drag to spin · tap the hood to take it</div>
       </section>
 
       {/* marquee */}

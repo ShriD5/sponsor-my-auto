@@ -215,10 +215,17 @@ function FitCamera({ base }: { base: [number, number, number] }) {
   const { camera, size } = useThree();
   useEffect(() => {
     const aspect = size.width / Math.max(size.height, 1);
-    const k = aspect < 0.8 ? 1.75 : aspect < 1.2 ? 1.35 : 1;
+    const k = aspect < 0.8 ? 1.7 : aspect < 1.2 ? 1.12 : 1;
     camera.position.set(base[0] * k, base[1] * k * 0.95, base[2] * k);
     camera.lookAt(0, 0.9, 0);
   }, [camera, size, base]);
+  return null;
+}
+
+/** OrbitControls sets touch-action:none on the canvas; let vertical page scroll through on touch. */
+function AllowPageScroll() {
+  const { gl } = useThree();
+  useEffect(() => { const t = setTimeout(() => { gl.domElement.style.touchAction = "pan-y"; }, 0); return () => clearTimeout(t); }, [gl]);
   return null;
 }
 
@@ -237,6 +244,7 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; name
     <div className={className ?? "w-full h-[400px] sm:h-[520px]"}>
       <Canvas shadows dpr={[1, 1.75]} camera={{ position: base, fov: 36 }} gl={{ antialias: true, alpha: true }}>
         {!dbg && <FitCamera base={base} />}
+        <AllowPageScroll />
         <ambientLight intensity={0.9} />
         <directionalLight position={[4, 7, 3]} intensity={1.4} castShadow />
         <directionalLight position={[-5, 3, -3]} intensity={0.9} color="#e63e8b" />
@@ -249,7 +257,7 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; name
           </group>
         ))}
         <ContactShadows position={[0, 0.02, 0]} opacity={0.75} scale={10} blur={2.4} far={3} color="#000" />
-        <OrbitControls target={[0, 0.9, 0]} enablePan={false} minDistance={3} maxDistance={12} minPolarAngle={0.6} maxPolarAngle={1.5} />
+        <OrbitControls target={[0, 0.9, 0]} enablePan={false} enableZoom={false} touches={{ ONE: -1 as unknown as THREE.TOUCH, TWO: THREE.TOUCH.ROTATE }} minDistance={3} maxDistance={12} minPolarAngle={0.6} maxPolarAngle={1.5} />
       </Canvas>
     </div>
   );
