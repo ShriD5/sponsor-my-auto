@@ -4,16 +4,16 @@ import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
 
 async function fileToDataUrl(file: File): Promise<string> {
-  if (file.type === "image/svg+xml") {
-    if (file.size > 300_000) throw new Error("SVG too large (300KB max)");
-    return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.onerror = rej; r.readAsDataURL(file); });
-  }
-  const bmp = await createImageBitmap(file);
-  const max = 640;
-  const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  // Rasterize everything (incl. SVG) to WebP so it works as a 3D texture.
+  const img = new Image();
+  const objUrl = URL.createObjectURL(file);
+  await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error("Could not read image")); img.src = objUrl; });
+  const w = img.naturalWidth || 512, h = img.naturalHeight || 512;
+  const max = 640, scale = Math.min(1, max / Math.max(w, h));
   const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
-  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+  c.width = Math.max(1, Math.round(w * scale)); c.height = Math.max(1, Math.round(h * scale));
+  c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+  URL.revokeObjectURL(objUrl);
   let q = 0.9, out = c.toDataURL("image/webp", q);
   while (out.length > 380_000 && q > 0.4) { q -= 0.1; out = c.toDataURL("image/webp", q); }
   if (out.length > 400_000) throw new Error("Logo still too big after compression");

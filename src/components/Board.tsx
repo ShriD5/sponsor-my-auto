@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { AutoSvg } from "./AutoSvg";
+import dynamic from "next/dynamic";
+const Auto3D = dynamic(() => import("./Auto3D").then((m) => m.Auto3D), { ssr: false, loading: () => <div className="w-full h-[460px] sm:h-[560px] flex items-center justify-center font-accent text-marigold text-2xl">loading the autos…</div> });
 import { Countdown } from "./Countdown";
 import { SlotModal } from "./SlotModal";
 import type { SlotState } from "@/lib/state";
@@ -37,8 +38,8 @@ export function Board({ initial }: { initial: State }) {
       <div className="stripe h-3" />
 
       {/* hero */}
-      <section className="max-w-6xl mx-auto px-4 pt-12 pb-10 grid lg:grid-cols-[1.1fr_1fr] gap-10 items-center">
-        <div>
+      <section className="max-w-6xl mx-auto px-4 pt-12 pb-6">
+        <div className="max-w-3xl">
           <div className="font-accent text-marigold text-2xl mb-2">ऑटो · ಆಟೋ · auto</div>
           <h1 className="font-display text-5xl sm:text-7xl leading-[0.95] text-cream outline-text">
             Sponsor<br />My Auto.
@@ -63,14 +64,17 @@ export function Board({ initial }: { initial: State }) {
             </div>
           </div>
         </div>
-        <div className="hover-wobble">
-          <AutoSvg hoodLogo={slot("a1-hood").sponsor?.logo} backLogo={slot("a1-back").sponsor?.logo} teeLogo={slot("a1-tee").sponsor?.logo} tint={TINT.a1} />
+      </section>
+      <section id="autos" className="max-w-6xl mx-auto px-4 pb-6">
+        <div className="paper rounded-2xl ink-border overflow-hidden relative">
+          <div className="absolute top-3 left-4 z-10 font-accent text-ink/70 text-sm">drag to spin · tap a part to buy it</div>
+          <Auto3D autos={AUTOS.map((a) => ({ id: a.id, tint: TINT[a.id], slots: { hood: slot(`${a.id}-hood`), back: slot(`${a.id}-back`), tee: slot(`${a.id}-tee`) } }))} onPick={(s) => !closed && setOpen(s)} />
         </div>
       </section>
       <div className="road max-w-6xl mx-auto" />
 
       {/* autos */}
-      <section id="autos" className="max-w-6xl mx-auto px-4 py-14">
+      <section className="max-w-6xl mx-auto px-4 py-14">
         <h2 className="font-display text-4xl sm:text-5xl text-marigold">The autos</h2>
         <p className="font-accent text-cream/80 text-xl mt-1">tap a part. pay. you&apos;re on it.</p>
         <div className="grid md:grid-cols-2 gap-10 mt-8">
@@ -80,10 +84,7 @@ export function Board({ initial }: { initial: State }) {
                 <h3 className="font-display text-3xl text-indigo">{a.name}</h3>
                 <span className="font-accent text-ink/60">{a.plate} · {a.area}</span>
               </div>
-              <div className="my-4">
-                <AutoSvg hoodLogo={slot(`${a.id}-hood`).sponsor?.logo} backLogo={slot(`${a.id}-back`).sponsor?.logo} teeLogo={slot(`${a.id}-tee`).sponsor?.logo} tint={TINT[a.id]} />
-              </div>
-              <div className="grid gap-3">
+              <div className="grid gap-3 mt-4">
                 {(["hood", "back", "tee"] as const).map((k) => <SlotCard key={k} s={slot(`${a.id}-${k}`)} onBuy={() => !closed && setOpen(slot(`${a.id}-${k}`))} closed={closed} />)}
               </div>
             </div>
