@@ -23,6 +23,8 @@ export const purchases = pgTable("purchases", {
   paymentId: text("payment_id"),
   refundId: text("refund_id"),
   isMock: boolean("is_mock").default(false).notNull(),
+  hidden: boolean("hidden").default(false).notNull(),   // admin kill switch for bad logos
+  ip: text("ip"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   paidAt: timestamp("paid_at", { withTimezone: true }),
 });
@@ -31,4 +33,11 @@ export const webhookEvents = pgTable("webhook_events", {
   id: text("id").primaryKey(),
   type: text("type").notNull(),
   receivedAt: timestamp("received_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const visitors = pgTable("visitors", {
+  id: text("id").primaryKey(),                 // anonymous client id
+  firstSeen: timestamp("first_seen", { withTimezone: true }).defaultNow().notNull(),
+  lastSeen: timestamp("last_seen", { withTimezone: true }).defaultNow().notNull(),
+  views: integer("views").default(1).notNull(),
 });

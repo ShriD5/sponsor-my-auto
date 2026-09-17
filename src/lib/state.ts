@@ -1,13 +1,13 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, gt, sql, and, or } from "drizzle-orm";
 import { db, schema } from "./db";
 import { SLOT_DEFS, nextPrice } from "./slots";
 
 export type SponsorPublic = { name: string; url: string; logo: string; amountCents: number; since: string };
 export type SlotState = {
-  id: string; autoId: string; kind: string; name: string;
+  id: string; autoId: string; kind: string; name: string; short: string;
   basePriceCents: number; currentPriceCents: number; nextPriceCents: number;
   sponsor: SponsorPublic | null;
-  size: string; seenBy: string; views: string; perk: string;
+  tag: string; lines: string[];
 };
 
 export async function ensureSeeded() {
@@ -49,17 +49,25 @@ export async function getState() {
   const slots: SlotState[] = SLOT_DEFS.map((def) => {
     const row = rows.find((r) => r.id === def.id)!;
     const p = row.activePurchaseId ? byId.get(row.activePurchaseId) : undefined;
+    const visible = p && !p.hidden;
     return {
-      id: def.id, autoId: def.autoId, kind: def.kind, name: def.name,
+      id: def.id, autoId: def.autoId, kind: def.kind, name: def.name, short: def.short,
       basePriceCents: row.basePriceCents, currentPriceCents: row.currentPriceCents,
       nextPriceCents: nextPrice(row.basePriceCents, row.currentPriceCents, !!p),
-      sponsor: p ? { name: p.sponsorName, url: p.url, logo: p.logoData, amountCents: p.amountCents, since: (p.paidAt ?? p.createdAt).toISOString() } : null,
-      size: def.size, seenBy: def.seenBy, views: def.views, perk: def.perk,
+      sponsor: visible ? { name: p.sponsorName, url: p.url, logo: p.logoData, amountCents: p.amountCents, since: (p.paidAt ?? p.createdAt).toISOString() } : null,
+      tag: def.tag, lines: def.lines,
     };
   });
-  const raisedCents = slots.reduce((a, s) => a + (s.sponsor?.amountCents ?? 0), 0);
+  const raisedCents = rows.reduce((a, r) => a + (r.activePurchaseId ? (byId.get(r.activePurchaseId)?.amountCents ?? 0) : 0), 0);
+  const since = new Date(Date.now() - 60_000);
+  const [[live], [visits], [takeovers]] = await Promise.all([
+    db.select({ n: sql<number>`count(*)::int` }).from(schema.visitors).where(gt(schema.visitors.lastSeen, since)),
+    db.select({ n: sql<number>`coalesce(sum(${schema.visitors.views}),0)::int` }).from(schema.visitors),
+    db.select({ n: sql<number>`count(*)::int` }).from(schema.purchases).where(or(eq(schema.purchases.status, "superseded"), eq(schema.purchases.status, "refunded"))),
+  ]);
   return {
     slots, raisedCents,
+    live: live?.n ?? 0, visits: visits?.n ?? 0, takeovers: takeovers?.n ?? 0,
     saleEndsAt: process.env.SALE_ENDS_AT ?? null,
     wrapDay: process.env.WRAP_DAY ?? null,
     mock: process.env.MOCK_PAY === "1",

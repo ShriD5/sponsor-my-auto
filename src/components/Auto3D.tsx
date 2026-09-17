@@ -1,223 +1,215 @@
 "use client";
-import { Component, Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
-import { ContactShadows, Html, OrbitControls, RoundedBox, Outlines, useGLTF } from "@react-three/drei";
+import { Component, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
+import { ContactShadows, Decal, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
 
-export type AutoSlots = { hood: SlotState; visor: SlotState; tee: SlotState };
+const INK = "#0f1133", CREAM = "#faf3e0", PINK = "#e63e8b";
 
-const INK = "#0f1133", CREAM = "#faf3e0", PINK = "#e63e8b", TEAL = "#0e8c8c";
+/* ------------------------------------------------------------------ */
+/* Sticker textures: everything the buyer needs to know is ON the auto  */
+/* ------------------------------------------------------------------ */
 
-/** canvas-drawn placeholder texture ("YOUR LOGO" on cream) */
-function useLabelTexture(title: string, sub: string, wide = false) {
-  return useMemo(() => {
-    const c = document.createElement("canvas"); c.width = wide ? 1024 : 512; c.height = 256;
-    const g = c.getContext("2d")!;
-    const cx = c.width / 2;
-    g.fillStyle = CREAM; g.fillRect(0, 0, c.width, 256);
-    for (let x = 4; x < c.width; x += 10) for (let y = 4; y < 256; y += 10) { g.fillStyle = "rgba(27,31,92,.08)"; g.beginPath(); g.arc(x, y, 1.2, 0, 7); g.fill(); }
-    g.fillStyle = "#1b1f5c"; g.font = `bold ${wide ? 120 : 58}px 'Titan One', Impact, sans-serif`; g.textAlign = "center"; g.fillText(title, cx, wide ? 150 : 124);
-    if (!wide) { g.fillStyle = PINK; g.font = "36px Kalam, cursive"; g.fillText(sub, cx, 190); }
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
-    return t;
-  }, [title, sub, wide]);
+function cssFont(v: string, fallback: string) {
+  if (typeof window === "undefined") return fallback;
+  const f = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  return f ? `${f}, ${fallback}` : fallback;
 }
 
-function LogoTex({ src, w, h }: { src: string; w: number; h: number }) {
-  const tex = useLoader(THREE.TextureLoader, src);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  // letterbox: keep aspect, cream background behind it
-  const img = tex.image as HTMLImageElement;
-  const ar = img && img.width ? img.width / img.height : 1;
-  const pw = Math.min(w, h * ar), ph = pw / ar;
+async function drawSticker(slot: SlotState, aspect: number): Promise<HTMLCanvasElement> {
+  const W = 1024, H = Math.max(96, Math.round(W / aspect));
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d")!;
+  const display = cssFont("--font-titan", "Impact, sans-serif");
+  const accent = cssFont("--font-kalam", "cursive");
+  try { await document.fonts.ready; } catch {}
+  const thin = aspect > 3;
+  const pad = Math.round(H * 0.06);
+
+  // base + ink border
+  g.fillStyle = INK; g.fillRect(0, 0, W, H);
+  g.fillStyle = slot.sponsor ? "#ffffff" : CREAM; g.fillRect(pad, pad, W - pad * 2, H - pad * 2);
+
+  if (slot.sponsor) {
+    const img = new Image();
+    await new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res(); img.src = slot.sponsor!.logo; });
+    const footer = thin ? 0 : Math.round(H * 0.16);
+    const box = { x: pad * 2, y: pad * 2, w: W - pad * 4, h: H - pad * 4 - footer };
+    if (img.naturalWidth) {
+      const s = Math.min(box.w / img.naturalWidth, box.h / img.naturalHeight);
+      const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
+      g.drawImage(img, box.x + (box.w - dw) / 2, box.y + (box.h - dh) / 2, dw, dh);
+    }
+    if (footer) {
+      g.fillStyle = INK; g.fillRect(pad, H - pad - footer, W - pad * 2, footer);
+      g.fillStyle = CREAM; g.font = `${Math.round(footer * 0.55)}px ${display}`; g.textAlign = "left"; g.textBaseline = "middle";
+      g.fillText(`${slot.sponsor.name.toUpperCase()} · ${fmtUsd(slot.currentPriceCents)}`, pad * 3, H - pad - footer / 2);
+      g.fillStyle = PINK; g.font = `${Math.round(footer * 0.5)}px ${accent}`; g.textAlign = "right";
+      g.fillText(`take it for ${fmtUsd(slot.nextPriceCents)} →`, W - pad * 3, H - pad - footer / 2);
+    }
+    return c;
+  }
+
+  // placeholder: dotted paper
+  g.fillStyle = "rgba(27,31,92,.08)";
+  for (let x = pad + 6; x < W - pad; x += 14) for (let y = pad + 6; y < H - pad; y += 14) { g.beginPath(); g.arc(x, y, 1.6, 0, 7); g.fill(); }
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if (thin) {
+    g.fillStyle = "#1b1f5c"; g.font = `${Math.round(H * 0.58)}px ${display}`;
+    g.fillText(`YOUR LOGO HERE  ·  ${fmtUsd(slot.nextPriceCents)}`, W / 2, H / 2 + H * 0.03);
+  } else {
+    g.fillStyle = PINK; g.font = `${Math.round(H * 0.11)}px ${accent}`;
+    g.fillText(slot.short.toLowerCase(), W / 2, H * 0.2);
+    g.fillStyle = "#1b1f5c"; g.font = `${Math.round(H * 0.24)}px ${display}`;
+    g.fillText("YOUR LOGO", W / 2, H * 0.45);
+    g.fillText("HERE", W / 2, H * 0.66);
+    g.fillStyle = INK; g.fillRect(pad, H - pad - H * 0.16, W - pad * 2, H * 0.16);
+    g.fillStyle = "#f5a524"; g.font = `${Math.round(H * 0.09)}px ${display}`;
+    g.fillText(`${fmtUsd(slot.nextPriceCents)}   ·   tap to take it`, W / 2, H - pad - H * 0.08);
+  }
+  return c;
+}
+
+function useStickerTexture(slot: SlotState, aspect: number) {
+  const [tex, setTex] = useState<THREE.CanvasTexture | null>(null);
+  const key = `${slot.id}|${slot.sponsor?.logo?.slice(0, 64) ?? ""}|${slot.sponsor?.name ?? ""}|${slot.currentPriceCents}|${slot.nextPriceCents}|${aspect.toFixed(2)}`;
+  useEffect(() => {
+    let dead = false;
+    drawSticker(slot, aspect).then((c) => {
+      if (dead) return;
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.needsUpdate = true;
+      setTex((old) => { old?.dispose(); return t; });
+    });
+    return () => { dead = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return tex;
+}
+
+/* ------------------------------------------------------------------ */
+/* Placement: raycast onto the model, project a Decal there            */
+/* ------------------------------------------------------------------ */
+
+type Placement = { mesh: THREE.Mesh; position: THREE.Vector3; rotation: THREE.Euler; scale: THREE.Vector3; point: THREE.Vector3; quat: THREE.Quaternion; dir: THREE.Vector3; w: number; h: number; lift: number };
+
+function place(obj: THREE.Object3D, origin: THREE.Vector3, dir: THREE.Vector3, w: number, h: number, depth: number, up?: THREE.Vector3, lift = 0.012): Placement | null {
+  const d = dir.clone().normalize();
+  const rc = new THREE.Raycaster(origin, d);
+  const all = rc.intersectObject(obj, true).filter((x) => (x.object as THREE.Mesh).isMesh);
+  if (typeof window !== "undefined" && window.location.search.includes("dbg")) console.log("[place]", origin.toArray().map((v) => +v.toFixed(2)), "->", all.slice(0, 4).map((x) => `${x.object.name}@${x.point.toArray().map((v) => +v.toFixed(2)).join(",")}`).join(" | "));
+  const hit = all[0]; // first surface the ray touches, glass included: stickers go on the outside
+  if (!hit) return null;
+  const mesh = hit.object as THREE.Mesh;
+  const helper = new THREE.Object3D();
+  helper.position.copy(hit.point);
+  if (up) helper.up.copy(up);
+  helper.lookAt(hit.point.clone().sub(d)); // +z points back toward the viewer
+  const qMesh = new THREE.Quaternion(); mesh.getWorldQuaternion(qMesh);
+  const qLocal = qMesh.invert().multiply(helper.quaternion);
+  const ws = new THREE.Vector3(); mesh.getWorldScale(ws);
+  return {
+    mesh,
+    position: mesh.worldToLocal(hit.point.clone()),
+    rotation: new THREE.Euler().setFromQuaternion(qLocal),
+    scale: new THREE.Vector3(w / ws.x, h / ws.y, depth / ws.z),
+    point: hit.point.clone(), quat: helper.quaternion.clone(), dir: d, w, h, lift,
+  };
+}
+
+function Sticker({ p, slot, aspect, onPick }: { p: Placement; slot: SlotState; aspect: number; onPick: (s: SlotState) => void }) {
+  const tex = useStickerTexture(slot, aspect);
+  const [hover, setHover] = useState(false);
+  if (!tex) return null;
+  const over = (e: { stopPropagation: () => void }) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; };
+  const out = () => { setHover(false); document.body.style.cursor = ""; };
+  const click = (e: { stopPropagation: () => void }) => { e.stopPropagation(); onPick(slot); };
+  const tint = hover ? "#ffffff" : "#e9e2d0";
+  // backing panel a hair outside the skin: covers window glass and open sides, so the sticker reads as a stretched fabric panel
+  const backPos = p.point.clone().sub(p.dir.clone().multiplyScalar(p.lift));
   return (
-    <group>
-      <mesh><planeGeometry args={[w, h]} /><meshToonMaterial color={CREAM} /></mesh>
-      <mesh position={[0, 0, 0.002]}><planeGeometry args={[pw * 0.9, ph * 0.9]} /><meshBasicMaterial map={tex} transparent toneMapped={false} /></mesh>
-    </group>
+    <>
+      {createPortal(
+        <Decal position={p.position} rotation={p.rotation} scale={p.scale} renderOrder={20} onClick={click} onPointerOver={over} onPointerOut={out}>
+          <meshBasicMaterial map={tex} transparent polygonOffset polygonOffsetFactor={-12} toneMapped={false} color={tint} side={THREE.DoubleSide} />
+        </Decal>,
+        p.mesh
+      )}
+      <mesh position={backPos} quaternion={p.quat} renderOrder={19} onClick={click} onPointerOver={over} onPointerOut={out}>
+        <planeGeometry args={[p.w, p.h]} />
+        <meshBasicMaterial map={tex} toneMapped={false} color={tint} side={THREE.FrontSide} />
+      </mesh>
+    </>
   );
 }
 
-class TexBoundary extends Component<{ fallback: React.ReactNode; children: React.ReactNode }, { err: boolean }> {
-  state = { err: false };
-  static getDerivedStateFromError() { return { err: true }; }
-  render() { return this.state.err ? this.props.fallback : this.props.children; }
-}
+/** Model normalized so the auto is LENGTH long, sits on y=0, nose points +x. Slots are raycast onto the surface. */
+export const MODEL_CFG = { url: "/models/auto.glb", yaw: Math.PI / 2, length: 2.6 };
 
-function SlotLabel({ slot, title, onPick, position, occlude }: { slot: SlotState; title: string; onPick: (s: SlotState) => void; position: [number, number, number]; occlude?: boolean }) {
-  const label = slot.sponsor ? `${slot.sponsor.name} · ${fmtUsd(slot.currentPriceCents)}` : title;
-  return (
-    <Html position={position} center zIndexRange={[20, 0]} occlude={occlude ? true : undefined} style={{ pointerEvents: "auto", transition: "opacity .25s" }}>
-      <button onClick={() => onPick(slot)}
-        className="whitespace-nowrap font-display text-xs sm:text-sm bg-marigold text-ink px-2.5 py-1 rounded-md shadow-[3px_3px_0_#0f1133] border-2 border-ink hover:bg-pink hover:text-cream transition">
-        {label} <span className="text-pink font-accent">{slot.sponsor ? "→ take " : "→ "}{fmtUsd(slot.nextPriceCents)}</span>
-      </button>
-    </Html>
-  );
-}
+export type AutoSlotMap = Partial<Record<"hood" | "visor" | "side-l" | "side-r" | "top", SlotState>>;
 
-function SlotFace({ slot, w, h, position, rotation, title, sub, onPick, occlude }:
-  { slot: SlotState; w: number; h: number; position: [number, number, number]; rotation: [number, number, number]; title: string; sub: string; onPick: (s: SlotState) => void; occlude?: boolean }) {
-  const ph = useLabelTexture(title, sub, w / h > 3);
-  const hover = useRef(false);
-  return (
-    <group position={position} rotation={rotation}>
-      <group onClick={(e) => { e.stopPropagation(); onPick(slot); }}
-        onPointerOver={() => { hover.current = true; document.body.style.cursor = "pointer"; }}
-        onPointerOut={() => { hover.current = false; document.body.style.cursor = ""; }}>
-        {slot.sponsor ? (
-          <TexBoundary fallback={<mesh><planeGeometry args={[w, h]} /><meshBasicMaterial map={ph} toneMapped={false} /></mesh>}>
-            <Suspense fallback={<mesh><planeGeometry args={[w, h]} /><meshToonMaterial color={CREAM} /></mesh>}>
-              <LogoTex src={slot.sponsor.logo} w={w} h={h} />
-            </Suspense>
-          </TexBoundary>
-        ) : (
-          <mesh><planeGeometry args={[w, h]} /><meshBasicMaterial map={ph} toneMapped={false} /></mesh>
-        )}
-        {/* ink frame */}
-        <mesh position={[0, 0, -0.004]}><planeGeometry args={[w + 0.06, h + 0.06]} /><meshToonMaterial color={INK} /></mesh>
-      </group>
-      {!occlude && <SlotLabel slot={slot} title={title} onPick={onPick} position={[0, h / 2 + 0.12, 0.08]} occlude />}
-    </group>
-  );
-}
-
-function Wheel({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position} rotation={[Math.PI / 2, 0, 0]}>
-      <mesh><cylinderGeometry args={[0.3, 0.3, 0.16, 24]} /><meshToonMaterial color={INK} /><Outlines thickness={0.02} color={INK} /></mesh>
-      <mesh position={[0, 0, 0]}><cylinderGeometry args={[0.14, 0.14, 0.18, 16]} /><meshToonMaterial color={CREAM} /></mesh>
-    </group>
-  );
-}
-
-/** Procedural auto rickshaw. +x is forward. Rear face at x = -1.15. */
-function Rickshaw({ tint, slots, onPick }: { tint: string; slots: AutoSlots; onPick: (s: SlotState) => void }) {
-  const mat = (c: string) => <meshToonMaterial color={c} />;
-  return (
-    <group>
-      {/* floor / chassis */}
-      <mesh position={[0, 0.34, 0]}><boxGeometry args={[2.5, 0.08, 1.3]} />{mat(INK)}</mesh>
-      {/* rear cabin body */}
-      <RoundedBox args={[1.5, 0.66, 1.3]} radius={0.06} smoothness={3} position={[-0.4, 0.68, 0]}>{mat(tint)}<Outlines thickness={0.015} color={INK} /></RoundedBox>
-      {/* canopy / hood */}
-      <RoundedBox args={[1.7, 0.85, 1.36]} radius={0.16} smoothness={4} position={[-0.3, 1.44, 0]}>{mat(INK)}</RoundedBox>
-      {/* canopy side windows (open) */}
-      <mesh position={[-0.2, 1.42, 0.69]}><planeGeometry args={[1.1, 0.5]} /><meshToonMaterial color="#1b1f5c" /></mesh>
-      <mesh position={[-0.2, 1.42, -0.69]} rotation={[0, Math.PI, 0]}><planeGeometry args={[1.1, 0.5]} /><meshToonMaterial color="#1b1f5c" /></mesh>
-      {/* nose */}
-      <RoundedBox args={[0.7, 0.55, 0.9]} radius={0.12} smoothness={3} position={[0.85, 0.7, 0]}>{mat(tint)}<Outlines thickness={0.015} color={INK} /></RoundedBox>
-      {/* windshield */}
-      <mesh position={[0.62, 1.32, 0]} rotation={[0, 0, -0.18]}><boxGeometry args={[0.05, 0.75, 1.15]} /><meshToonMaterial color="#8fd3f4" transparent opacity={0.6} /></mesh>
-      {/* headlight */}
-      <mesh position={[1.22, 0.9, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.13, 0.13, 0.06, 20]} /><meshToonMaterial color={CREAM} emissive="#ffd" emissiveIntensity={0.4} /></mesh>
-      {/* taillights */}
-      <mesh position={[-1.16, 0.55, 0.5]}><boxGeometry args={[0.04, 0.12, 0.2]} />{mat(PINK)}</mesh>
-      <mesh position={[-1.16, 0.55, -0.5]}><boxGeometry args={[0.04, 0.12, 0.2]} />{mat(PINK)}</mesh>
-      {/* handlebar */}
-      <mesh position={[0.55, 1.0, 0]}><boxGeometry args={[0.05, 0.05, 0.7]} />{mat(INK)}</mesh>
-      {/* driver: torso + head, faces +x */}
-      <group position={[0.2, 0, 0]}>
-        <mesh position={[0, 1.02, 0]}><boxGeometry args={[0.3, 0.55, 0.42]} /><meshToonMaterial color={TEAL} /><Outlines thickness={0.015} color={INK} /></mesh>
-        <mesh position={[0, 1.45, 0]}><sphereGeometry args={[0.16, 20, 16]} /><meshToonMaterial color="#c68642" /><Outlines thickness={0.015} color={INK} /></mesh>
-        {/* tee front */}
-        <SlotFace slot={slots.tee} w={0.3} h={0.34} position={[0.16, 1.04, 0]} rotation={[0, Math.PI / 2, 0]} title="YOUR LOGO" sub="tee" onPick={onPick} occlude />
-        <SlotLabel slot={slots.tee} title="THE TEE" onPick={onPick} position={[0.3, 1.05, 1.0]} />
-      </group>
-      {/* garland on rear */}
-      <mesh position={[-1.17, 1.9, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.62, 0.035, 8, 24, Math.PI]} /><meshToonMaterial color="#f5a524" /></mesh>
-      {/* visor: front strip of canopy */}
-      <SlotFace slot={slots.visor} w={1.0} h={0.16} position={[0.56, 1.78, 0]} rotation={[0, Math.PI / 2, 0]} title="YOUR NAME HERE" sub="the visor" onPick={onPick} />
-      {/* hood slot: rear of canopy */}
-      <SlotFace slot={slots.hood} w={1.2} h={0.66} position={[-1.16, 1.44, 0]} rotation={[0, -Math.PI / 2, 0]} title="YOUR LOGO HERE" sub="tap to take the hood" onPick={onPick} />
-      {/* plate */}
-      <Html position={[-1.2, 0.42, 0]} center transform rotation={[0, -Math.PI / 2, 0]} scale={0.25} style={{ pointerEvents: "none" }}>
-        <div className="font-display text-ink bg-cream border-2 border-ink px-2 rounded text-[10px]">HORN OK PLEASE</div>
-      </Html>
-      <Wheel position={[1.0, 0.3, 0]} />
-      <Wheel position={[-0.7, 0.3, 0.62]} />
-      <Wheel position={[-0.7, 0.3, -0.62]} />
-    </group>
-  );
-}
-
-/**
- * Real model (public/models/auto.glb, fetched via scripts/fetch-model.mjs). The mesh is normalized so the
- * auto is LENGTH long, sits on y=0, faces +x. Slot faces are placed in fractions of the normalized bbox;
- * tune these after running scripts/inspect-model.mjs for a new model.
- */
-export const MODEL_CFG = {
-  url: "/models/auto.glb",
-  yaw: Math.PI / 2,       // raw model nose points +z; rotate so it points +x
-  length: 2.6,
-  hood: { y: 0.68, w: 0.36, h: 0.24, xInset: 0.01 },   // rear face, fractions of H (y) and L (w) / H (h)
-  tee:  { x: 0.18, y: 0.55, z: 0, w: 0.12, h: 0.14 },   // fractions of L (x), H (y), W (z)
-  visor: { y: 0.84, w: 0.30, h: 0.075, xInset: 0.01 },  // front face strip above the windshield
-};
-
-function GlbRickshaw({ slots, onPick, name }: { slots: AutoSlots; onPick: (s: SlotState) => void; name?: string }) {
+function GlbRickshaw({ slots, onPick }: { slots: AutoSlotMap; onPick: (s: SlotState) => void }) {
   const { scene } = useGLTF(MODEL_CFG.url);
   const { obj, L, H, W } = useMemo(() => {
     const obj = scene.clone(true);
     obj.rotation.y = MODEL_CFG.yaw;
     obj.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(obj);
+    const box = new THREE.Box3().setFromObject(obj, true);
     const size = new THREE.Vector3(); box.getSize(size);
     const k = MODEL_CFG.length / Math.max(size.x, 1e-3);
     obj.scale.setScalar(k);
     obj.updateMatrixWorld(true);
-    const box2 = new THREE.Box3().setFromObject(obj);
+    const box2 = new THREE.Box3().setFromObject(obj, true);
     const c = new THREE.Vector3(); box2.getCenter(c);
     obj.position.set(-c.x, -box2.min.y, -c.z);
+    obj.updateMatrixWorld(true);
     obj.traverse((m) => { if ((m as THREE.Mesh).isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     return { obj, L: size.x * k, H: size.y * k, W: size.z * k };
   }, [scene]);
-  const rearX = -L / 2;
+
+  // one raycast per slot; sizes in metres (auto is 2.6 long)
+  const placements = useMemo(() => {
+    const far = 4;
+    if (typeof window !== "undefined" && window.location.search.includes("dbg")) console.log("[dims]", { L: +L.toFixed(3), H: +H.toFixed(3), W: +W.toFixed(3) });
+    const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+    return {
+      hood:     { p: place(obj, v(-far, H * 0.745, 0), v(1, 0, 0), W * 0.80, H * 0.34, 0.16, undefined, 0.06), aspect: (W * 0.80) / (H * 0.34) },
+      visor:    { p: place(obj, v(far, H * 0.935, 0), v(-1, 0, 0), W * 0.70, H * 0.055, 0.12), aspect: (W * 0.70) / (H * 0.055) },
+      "side-l": { p: place(obj, v(-L * 0.34, H * 0.755, far), v(0, 0, -1), L * 0.17, H * 0.23, 0.08), aspect: (L * 0.17) / (H * 0.23) },
+      "side-r": { p: place(obj, v(-L * 0.34, H * 0.755, -far), v(0, 0, 1), L * 0.17, H * 0.23, 0.08), aspect: (L * 0.17) / (H * 0.23) },
+      top:      { p: place(obj, v(-L * 0.41, far, 0), v(0, -1, 0), W * 0.66, L * 0.055, 0.12, v(1, 0, 0)), aspect: (W * 0.66) / (L * 0.055) },
+    } as Record<keyof AutoSlotMap, { p: Placement | null; aspect: number }>;
+  }, [obj, L, H, W]);
+
   return (
     <group>
       <primitive object={obj} />
-      {name && (
-        <Html position={[0, H + 0.25, 0]} center zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
-          <div className="sticker whitespace-nowrap bg-pink text-cream px-3 py-0.5 rounded text-sm border-2 border-ink shadow-[3px_3px_0_#0f1133]">{name}</div>
-        </Html>
-      )}
-      <SlotFace slot={slots.hood} w={L * MODEL_CFG.hood.w} h={H * MODEL_CFG.hood.h}
-        position={[rearX - MODEL_CFG.hood.xInset, H * MODEL_CFG.hood.y, 0]} rotation={[0, -Math.PI / 2, 0]}
-        title="YOUR LOGO HERE" sub="tap to take the hood" onPick={onPick} />
-      <SlotFace slot={slots.visor} w={L * MODEL_CFG.visor.w} h={H * MODEL_CFG.visor.h}
-        position={[L / 2 + MODEL_CFG.visor.xInset, H * MODEL_CFG.visor.y, 0]} rotation={[0, Math.PI / 2, 0]}
-        title="YOUR NAME HERE" sub="the visor" onPick={onPick} />
-      <SlotFace slot={slots.tee} w={L * MODEL_CFG.tee.w} h={H * MODEL_CFG.tee.h}
-        position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * MODEL_CFG.tee.z]} rotation={[0, Math.PI / 2, 0]}
-        title="YOUR LOGO" sub="tee" onPick={onPick} occlude />
-      <SlotLabel slot={slots.tee} title="THE TEE" onPick={onPick} position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * 1.05]} />
+      {(Object.keys(placements) as (keyof AutoSlotMap)[]).map((k) => {
+        const slot = slots[k]; const pl = placements[k];
+        return slot && pl.p ? <Sticker key={k} p={pl.p} slot={slot} aspect={pl.aspect} onPick={onPick} /> : null;
+      })}
     </group>
   );
 }
 
-/** Uses the real GLB when present, falls back to the procedural auto if it is missing or fails to load. */
-const HAS_MODEL = process.env.NEXT_PUBLIC_AUTO_MODEL === "1";
-function AutoModel({ tint, slots, onPick, name }: { tint: string; slots: AutoSlots; onPick: (s: SlotState) => void; name?: string }) {
-  if (!HAS_MODEL) return <Rickshaw tint={tint} slots={slots} onPick={onPick} />;
-  return (
-    <TexBoundary fallback={<Rickshaw tint={tint} slots={slots} onPick={onPick} />}>
-      <Suspense fallback={null}>
-        <GlbRickshaw slots={slots} onPick={onPick} name={name} />
-      </Suspense>
-    </TexBoundary>
-  );
+class Boundary extends Component<{ children: React.ReactNode }, { err: boolean }> {
+  state = { err: false };
+  static getDerivedStateFromError() { return { err: true }; }
+  render() { return this.state.err ? null : this.props.children; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Scene                                                               */
+/* ------------------------------------------------------------------ */
 
 function debugCam(): [number, number, number] | null {
   if (typeof window === "undefined") return null;
   const c = new URLSearchParams(window.location.search).get("cam");
   const d = 6;
-  return c === "rear" ? [-d, 1.6, 0.01] : c === "front" ? [d, 1.6, 0.01] : c === "side" ? [0.01, 1.6, d] : c === "top" ? [0.01, d + 1, 0.01] : null;
+  return c === "rear" ? [-d, 1.6, 0.01] : c === "front" ? [d, 1.6, 0.01] : c === "side" ? [0.01, 1.6, d] : c === "side2" ? [0.01, 1.6, -d] : c === "top" ? [0.01, d + 1, 0.01] : null;
 }
 
-/** Pull the camera back on narrow viewports so the auto (and its tags) fit. */
 function FitCamera({ base }: { base: [number, number, number] }) {
   const { camera, size } = useThree();
   useEffect(() => {
@@ -229,7 +221,6 @@ function FitCamera({ base }: { base: [number, number, number] }) {
   return null;
 }
 
-/** OrbitControls sets touch-action:none on the canvas; let vertical page scroll through on touch. */
 function AllowPageScroll() {
   const { gl } = useThree();
   useEffect(() => { const t = setTimeout(() => { gl.domElement.style.touchAction = "pan-y"; }, 0); return () => clearTimeout(t); }, [gl]);
@@ -243,10 +234,9 @@ function Turntable({ children, speed = 0.15 }: { children: React.ReactNode; spee
   return <group ref={ref}>{children}</group>;
 }
 
-export function Auto3D({ autos, onPick, className }: { autos: { id: string; name?: string; tint: string; slots: AutoSlots }[]; onPick: (s: SlotState) => void; className?: string }) {
-  const gap = 3.4;
+export function Auto3D({ slots, onPick, className }: { slots: AutoSlotMap; onPick: (s: SlotState) => void; className?: string }) {
   const dbg = debugCam();
-  const base: [number, number, number] = dbg ?? (autos.length > 1 ? [-6.8, 2.6, 2.4] : [-4.4, 1.7, 2.6]);
+  const base: [number, number, number] = dbg ?? [-4.4, 1.7, 2.6];
   return (
     <div className={className ?? "w-full h-[400px] sm:h-[520px]"}>
       <Canvas shadows dpr={[1, 1.75]} camera={{ position: base, fov: 36 }} gl={{ antialias: true, alpha: true }}>
@@ -256,13 +246,13 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; name
         <directionalLight position={[4, 7, 3]} intensity={1.4} castShadow />
         <directionalLight position={[-5, 3, -3]} intensity={0.9} color="#e63e8b" />
         <pointLight position={[-3, 1.5, 2]} intensity={6} color="#f5a524" distance={9} />
-        {autos.map((a, i) => (
-          <group key={a.id} position={[0, 0, (i - (autos.length - 1) / 2) * gap]}>
-            <Turntable speed={0.18}>
-              <AutoModel tint={a.tint} slots={a.slots} onPick={onPick} name={a.name} />
-            </Turntable>
-          </group>
-        ))}
+        <Turntable speed={0.18}>
+          <Boundary>
+            <Suspense fallback={null}>
+              <GlbRickshaw slots={slots} onPick={onPick} />
+            </Suspense>
+          </Boundary>
+        </Turntable>
         <ContactShadows position={[0, 0.02, 0]} opacity={0.75} scale={10} blur={2.4} far={3} color="#000" />
         <OrbitControls target={[0, 0.9, 0]} enablePan={false} enableZoom={false} touches={{ ONE: -1 as unknown as THREE.TOUCH, TWO: THREE.TOUCH.ROTATE }} minDistance={3} maxDistance={12} minPolarAngle={0.6} maxPolarAngle={1.5} />
       </Canvas>

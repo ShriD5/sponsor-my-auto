@@ -59,10 +59,7 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
         </div>
 
         <ul className="text-sm text-ink/80 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-          <li><b>Where:</b> {slot.size}</li>
-          <li><b>Seen by:</b> {slot.seenBy}</li>
-          <li><b>Views:</b> {slot.views}</li>
-          <li><b>Extra:</b> {slot.perk}</li>
+          {slot.lines.map((l) => <li key={l} className="flex gap-2"><span className="text-pink">★</span>{l}</li>)}
         </ul>
 
         <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-4 items-start">
