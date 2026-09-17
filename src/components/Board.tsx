@@ -1,15 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-const Auto3D = dynamic(() => import("./Auto3D").then((m) => m.Auto3D), { ssr: false, loading: () => <div className="w-full h-[460px] sm:h-[560px] flex items-center justify-center font-accent text-marigold text-2xl">loading the autos…</div> });
 import { Countdown } from "./Countdown";
 import { SlotModal } from "./SlotModal";
 import type { SlotState } from "@/lib/state";
-import { AUTOS, fmtUsd } from "@/lib/slots";
+import { AUTO, fmtUsd } from "@/lib/slots";
+
+const Auto3D = dynamic(() => import("./Auto3D").then((m) => m.Auto3D), {
+  ssr: false,
+  loading: () => <div className="w-full h-[400px] sm:h-[520px] flex items-center justify-center font-accent text-indigo text-2xl">bringing the auto around…</div>,
+});
 
 type State = { slots: SlotState[]; raisedCents: number; saleEndsAt: string | null; wrapDay: string | null; mock: boolean };
-
-const TINT: Record<string, string> = { a1: "#f5a524", a2: "#0e8c8c" };
 
 export function Board({ initial }: { initial: State }) {
   const [state, setState] = useState(initial);
@@ -23,13 +25,14 @@ export function Board({ initial }: { initial: State }) {
   }, []);
 
   const slot = (id: string) => state.slots.find((s) => s.id === id)!;
-  const page = slot("site-page");
+  const hood = slot("a1-hood"), tee = slot("a1-tee"), page = slot("site-page");
   const sold = state.slots.filter((s) => s.sponsor).length;
   const closed = state.saleEndsAt ? Date.now() > Date.parse(state.saleEndsAt) : false;
+  const pick = (s: SlotState) => { if (!closed) setOpen(s); };
+  const wrap = state.wrapDay ? new Date(state.wrapDay).toLocaleDateString("en-IN", { day: "numeric", month: "long" }) : null;
 
   return (
     <main className="flex-1">
-      {/* presented by */}
       {page.sponsor && (
         <a href={page.sponsor.url} target="_blank" rel="noopener sponsored" className="block bg-marigold text-ink text-center py-2 font-accent text-lg">
           Presented by <img src={page.sponsor.logo} alt="" className="inline h-6 mx-2 align-middle" /> <b>{page.sponsor.name}</b>
@@ -42,14 +45,18 @@ export function Board({ initial }: { initial: State }) {
         <div className="max-w-3xl">
           <div className="font-accent text-marigold text-2xl mb-2">ऑटो · ಆಟೋ · auto</div>
           <h1 className="font-display text-5xl sm:text-7xl leading-[0.95] text-cream outline-text">
-            Sponsor<br />My Auto.
+            Put your logo<br />on an auto.
           </h1>
           <p className="mt-6 text-lg text-cream/85 max-w-xl">
-            Two auto rickshaws in Bengaluru. One month on the road, 8–12 hours a day. Buy the hood, the back panel, or the driver&apos;s tee.
-            Anyone can <b className="text-pink">take your slot for double</b>, and you get refunded in full.
+            One rickshaw. Thirty days on Bengaluru roads, ten hours a day. Your brand on the hood,
+            where every car stuck behind it has nothing else to look at.
+            Anyone can <b className="text-pink">take your slot for double</b>. If they do, you get every dollar back.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#autos" className="font-display text-xl bg-marigold text-ink px-6 py-3 rounded-lg ink-border-soft hover:bg-pink hover:text-cream transition">See the autos</a>
+            <button onClick={() => pick(hood)} disabled={closed}
+              className="font-display text-xl bg-marigold text-ink px-6 py-3 rounded-lg ink-border-soft hover:bg-pink hover:text-cream transition disabled:opacity-60">
+              {hood.sponsor ? `Take the hood · ${fmtUsd(hood.nextPriceCents)}` : `Buy the hood · ${fmtUsd(hood.nextPriceCents)}`}
+            </button>
             <a href="#how" className="font-accent text-xl text-cream/90 px-5 py-3 underline decoration-marigold decoration-2 underline-offset-4">how it works</a>
           </div>
           <div className="mt-8 flex flex-wrap gap-6 items-center">
@@ -60,63 +67,49 @@ export function Board({ initial }: { initial: State }) {
             <div className="paper rounded-xl px-5 py-3 ink-border-soft">
               <div className="font-accent text-ink/70 leading-none">raised so far</div>
               <div className="font-display text-3xl text-indigo">{fmtUsd(state.raisedCents)}</div>
-              <div className="font-accent text-sm text-pink">{sold}/7 slots taken</div>
+              <div className="font-accent text-sm text-pink">{sold}/{state.slots.length} slots taken</div>
             </div>
           </div>
         </div>
       </section>
-      <section id="autos" className="max-w-6xl mx-auto px-4 pb-6">
+
+      {/* the auto */}
+      <section id="auto" className="max-w-6xl mx-auto px-4 pb-6">
         <div className="paper rounded-2xl ink-border overflow-hidden relative">
-          <div className="absolute top-3 left-4 z-10 font-accent text-ink/70 text-sm">drag to spin · tap a part to buy it</div>
-          <Auto3D autos={AUTOS.map((a) => ({ id: a.id, name: a.name, tint: TINT[a.id], slots: { hood: slot(`${a.id}-hood`), back: slot(`${a.id}-back`), tee: slot(`${a.id}-tee`) } }))} onPick={(s) => !closed && setOpen(s)} />
+          <div className="absolute top-3 left-4 z-10 font-accent text-ink/70 text-sm">drag to spin · tap the hood or the tee to buy it</div>
+          <Auto3D autos={[{ id: AUTO.id, tint: "#f5a524", slots: { hood, tee } }]} onPick={pick} />
         </div>
       </section>
       <div className="road max-w-6xl mx-auto" />
 
-      {/* autos */}
+      {/* slots */}
       <section className="max-w-6xl mx-auto px-4 py-14">
-        <h2 className="font-display text-4xl sm:text-5xl text-marigold">The autos</h2>
-        <p className="font-accent text-cream/80 text-xl mt-1">tap a part. pay. you&apos;re on it.</p>
-        <div className="grid md:grid-cols-2 gap-10 mt-8">
-          {AUTOS.map((a) => (
-            <div key={a.id} className="paper rounded-2xl ink-border p-5">
-              <div className="flex items-baseline justify-between">
-                <h3 className="font-display text-3xl text-indigo">{a.name}</h3>
-                <span className="font-accent text-ink/60">{a.plate} · {a.area}</span>
-              </div>
-              <div className="grid gap-3 mt-4">
-                {(["hood", "back", "tee"] as const).map((k) => <SlotCard key={k} s={slot(`${a.id}-${k}`)} onBuy={() => !closed && setOpen(slot(`${a.id}-${k}`))} closed={closed} />)}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-8 paper rounded-2xl ink-border p-5 grid sm:grid-cols-[1fr_auto] gap-4 items-center">
-          <div>
-            <div className="font-accent text-pink text-lg leading-none">digital</div>
-            <h3 className="font-display text-3xl text-indigo">The Page</h3>
-            <p className="text-ink/80 text-sm mt-1">{page.size}. {page.seenBy}. {page.perk}.</p>
-          </div>
-          <SlotCard s={page} onBuy={() => !closed && setOpen(page)} closed={closed} compact />
+        <h2 className="font-display text-4xl sm:text-5xl text-marigold">Three slots. That&apos;s it.</h2>
+        <p className="font-accent text-cream/80 text-xl mt-1">no account, no call, no media kit. pay, upload, you&apos;re on.</p>
+        <div className="grid md:grid-cols-3 gap-6 mt-8">
+          <SlotCard s={hood} onBuy={() => pick(hood)} closed={closed} tag="the big one" />
+          <SlotCard s={tee} onBuy={() => pick(tee)} closed={closed} tag="the one riders read" />
+          <SlotCard s={page} onBuy={() => pick(page)} closed={closed} tag="digital" />
         </div>
       </section>
 
       {/* live board */}
       <section className="bg-indigo py-14">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="font-display text-4xl text-cream">Live board</h2>
-          <p className="font-accent text-marigold text-xl">updates every 10s · highest payment holds the slot</p>
+          <h2 className="font-display text-4xl text-cream">Who&apos;s on it right now</h2>
+          <p className="font-accent text-marigold text-xl">highest payment holds the slot · updates every 10 seconds</p>
           <div className="mt-6 overflow-x-auto rounded-xl ink-border-soft">
             <table className="w-full text-left bg-ink">
               <thead className="font-accent text-marigold text-lg">
-                <tr><th className="px-4 py-3">slot</th><th className="px-4 py-3">sponsor</th><th className="px-4 py-3">holding at</th><th className="px-4 py-3">take over for</th></tr>
+                <tr><th className="px-4 py-3">slot</th><th className="px-4 py-3">held by</th><th className="px-4 py-3">paid</th><th className="px-4 py-3">take it for</th></tr>
               </thead>
               <tbody>
                 {state.slots.map((s) => (
                   <tr key={s.id} className="border-t border-cream/10">
                     <td className="px-4 py-3 font-display">{s.name}</td>
-                    <td className="px-4 py-3">{s.sponsor ? <a href={s.sponsor.url} target="_blank" rel="noopener sponsored" className="inline-flex items-center gap-2 hover:text-marigold"><img src={s.sponsor.logo} alt="" className="h-6 w-6 object-contain bg-cream rounded" />{s.sponsor.name}</a> : <span className="text-cream/50 font-accent">open</span>}</td>
+                    <td className="px-4 py-3">{s.sponsor ? <a href={s.sponsor.url} target="_blank" rel="noopener sponsored" className="inline-flex items-center gap-2 hover:text-marigold"><img src={s.sponsor.logo} alt="" className="h-6 w-6 object-contain bg-cream rounded" />{s.sponsor.name}</a> : <span className="text-cream/50 font-accent">nobody yet</span>}</td>
                     <td className="px-4 py-3 tabular-nums">{s.sponsor ? fmtUsd(s.currentPriceCents) : "—"}</td>
-                    <td className="px-4 py-3"><button disabled={closed} onClick={() => setOpen(s)} className="font-display text-marigold hover:text-pink disabled:opacity-40">{fmtUsd(s.nextPriceCents)} →</button></td>
+                    <td className="px-4 py-3"><button disabled={closed} onClick={() => pick(s)} className="font-display text-marigold hover:text-pink disabled:opacity-40">{fmtUsd(s.nextPriceCents)} →</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -126,43 +119,62 @@ export function Board({ initial }: { initial: State }) {
       </section>
 
       {/* how */}
-      <section id="how" className="max-w-6xl mx-auto px-4 py-14 grid md:grid-cols-3 gap-6">
-        {[
-          ["1. Pick a part", "Hood, back panel, or the driver's tee on either auto. Or the banner on this page."],
-          ["2. Pay, upload, done", "No account. Card checkout, drop your logo and link, you're live on this page in seconds."],
-          ["3. Wrap day", `Panels printed and fitted${state.wrapDay ? ` on ${new Date(state.wrapDay).toLocaleDateString("en-IN", { day: "numeric", month: "long" })}` : ""}. Reveal video, then 30 days on the road with daily photo proof.`],
-        ].map(([h, p]) => (
-          <div key={h} className="paper rounded-2xl ink-border p-5">
-            <h3 className="font-display text-2xl text-indigo">{h}</h3>
-            <p className="mt-2 text-ink/80">{p}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* perks */}
-      <section className="max-w-6xl mx-auto px-4 pb-14">
-        <h2 className="font-display text-4xl text-marigold">What you get</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6 text-cream/90">
+      <section id="how" className="max-w-6xl mx-auto px-4 py-14">
+        <h2 className="font-display text-4xl text-marigold mb-6">How it works</h2>
+        <div className="grid md:grid-cols-3 gap-6">
           {[
-            "30 days on the road, 8–12 hrs/day",
-            "Wrap-day reveal video + photo set of your slot",
-            "Daily proof photo from the driver, posted here",
-            "GPS route heatmap at day 15 and day 30",
-            "End-of-month views estimate",
-            "Logo + link on this page for the whole month",
-            "Tagged in the launch post, the reveal, and weekly updates",
-            "First refusal on the same slot next month at closing price",
-            "Hood sponsors: the physical panels shipped to you after",
-          ].map((t) => <div key={t} className="flex gap-3 items-start"><span className="text-pink font-display">✦</span><span>{t}</span></div>)}
+            ["1. Tap, pay, upload", "Pick the hood or the tee. Card checkout, drop your logo and a link. You're on this page before the receipt email lands."],
+            ["2. Hold it or lose it", "Anyone can take your slot by paying double. You're refunded in full, automatically, and you can take it back at double again."],
+            ["3. Wrap day", `Sale closes, we print, we fit${wrap ? ` on ${wrap}` : ""}. Reveal video, then 30 days on the road with a photo from the driver every day.`],
+          ].map(([h, p]) => (
+            <div key={h} className="paper rounded-2xl ink-border p-5">
+              <h3 className="font-display text-2xl text-indigo">{h}</h3>
+              <p className="mt-2 text-ink/80">{p}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* numbers */}
-      <section className="bg-marigold text-ink py-10">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {[["2", "autos"], ["30", "days each"], ["8–12", "hrs on road / day"], ["8.5–12k", "est. hood views / day"]].map(([n, l]) => (
-            <div key={l}><div className="font-display text-4xl sm:text-5xl">{n}</div><div className="font-accent text-lg">{l}</div></div>
+      {/* why the hood */}
+      <section className="max-w-6xl mx-auto px-4 pb-14 grid lg:grid-cols-[1fr_1.2fr] gap-8 items-start">
+        <div>
+          <h2 className="font-display text-4xl text-marigold">Why the hood is worth {fmtUsd(hood.basePriceCents)}</h2>
+          <p className="mt-4 text-cream/85">
+            An agency will sell you one auto hood for a few hundred rupees a month, lost in a fleet of fifty.
+            This is not that. This is one auto, one brand, and a page, a reveal, and a month of content built around it.
+            The hood is the stunt. The impressions are the bonus.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4 text-cream/90">
+          {[
+            ["8–9 sq ft", "of print, the biggest legal ad surface on an auto"],
+            ["270°", "visibility: behind and both sides, exactly where traffic sits"],
+            ["8.5–12k", "estimated eyeballs a day, per industry figures for hood ads"],
+            ["10 hrs", "on the road, every day, for 30 days"],
+            ["1 of 1", "no fleet, no rotation, no other brand on the auto"],
+            ["Yours after", "the printed panels ship to you when the month ends"],
+          ].map(([n, l]) => (
+            <div key={n} className="paper rounded-xl ink-border-soft p-4"><div className="font-display text-2xl text-indigo">{n}</div><div className="text-sm text-ink/80 mt-1">{l}</div></div>
           ))}
+        </div>
+      </section>
+
+      {/* perks */}
+      <section className="bg-marigold text-ink py-14">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="font-display text-4xl">Every sponsor gets</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+            {[
+              "30 days on the road, 10 hours a day",
+              "Wrap-day reveal video and a photo set of your slot",
+              "One proof photo from the driver every day, posted here",
+              "GPS route heatmap at day 15 and day 30",
+              "An end-of-month views estimate you can show your team",
+              "Logo and link on this page through the whole month",
+              "Tagged in the launch post, the reveal, and every weekly update",
+              "First refusal on the same slot next month at your closing price",
+            ].map((t) => <div key={t} className="flex gap-3 items-start"><span className="font-display">✦</span><span>{t}</span></div>)}
+          </div>
         </div>
       </section>
 
@@ -171,16 +183,17 @@ export function Board({ initial }: { initial: State }) {
         <h2 className="font-display text-4xl text-marigold mb-6">Questions</h2>
         <div className="space-y-3">
           {[
-            ["What happens if someone takes my slot?", "They pay double what you paid. You get a full automatic refund and a notification if you left an email. You can take it back at double again."],
-            ["Is there a login?", "No. Pay, upload, done. Save the link on your thank-you page if you want to check on it."],
-            ["Can I pick the route?", "No, but you get the GPS heatmap so you know exactly where the auto went."],
-            ["What artwork do you need?", "Just a logo now. After the sale closes you get the print templates for the hood (3 panels), back panel, and tee front. 300dpi, CMYK. Deadline is 24h after close."],
-            ["What's not allowed?", "Alcohol, tobacco, gambling, political, adult, and anything the transport authority rejects. Refunded if declined."],
-            ["What if the auto breaks down?", "Missed days are added to the end of the month."],
-            ["Invoice?", "Yes, a USD invoice from the payment receipt via Dodo Payments."],
+            ["Someone took my slot. Now what?", "They paid double what you did. Your full amount is refunded automatically, usually within minutes. Want it back? Take it at double again."],
+            ["Why only the hood and the tee? Where's the back panel?", "Back-panel ads aren't permitted on autos here, and we're not fitting anything the transport authority can pull off. The hood is the approved format, and it's the bigger surface anyway."],
+            ["Do I need an account?", "No. Pay, upload, done. Your thank-you page has a link you can bookmark to check on your slot."],
+            ["Can I choose the route?", "No. The driver works their normal Bengaluru route. You get the GPS heatmap, so you'll see exactly where the auto went."],
+            ["What artwork do you need?", "Just a logo today. After the sale closes you get print templates for the hood (three panels) or the tee front. 300dpi, CMYK. Artwork is due 24 hours after close."],
+            ["Anything you won't put on the auto?", "Alcohol, tobacco, gambling, political, adult, or anything the transport authority would reject. If we decline, you're refunded in full."],
+            ["What if the auto is off the road?", "Any missed day gets added to the end of the month."],
+            ["Can I get an invoice?", "Yes. You get a USD receipt from Dodo Payments at checkout, and an invoice on request."],
           ].map(([q, a]) => (
             <details key={q} className="paper rounded-xl ink-border-soft p-4 group">
-              <summary className="font-display text-lg text-indigo cursor-pointer list-none flex justify-between">{q}<span className="text-pink group-open:rotate-45 transition">+</span></summary>
+              <summary className="font-display text-lg text-indigo cursor-pointer list-none flex justify-between gap-4">{q}<span className="text-pink group-open:rotate-45 transition">+</span></summary>
               <p className="mt-2 text-ink/80">{a}</p>
             </details>
           ))}
@@ -199,21 +212,29 @@ export function Board({ initial }: { initial: State }) {
   );
 }
 
-function SlotCard({ s, onBuy, closed, compact }: { s: SlotState; onBuy: () => void; closed: boolean; compact?: boolean }) {
+function SlotCard({ s, onBuy, closed, tag }: { s: SlotState; onBuy: () => void; closed: boolean; tag: string }) {
   return (
-    <button onClick={onBuy} disabled={closed}
-      className={`text-left rounded-xl ink-border-soft bg-white hover:bg-paper transition p-3 flex items-center gap-3 disabled:opacity-60 ${compact ? "" : "w-full"}`}>
-      <div className="h-12 w-12 shrink-0 rounded-lg bg-cream flex items-center justify-center overflow-hidden">
-        {s.sponsor ? <img src={s.sponsor.logo} alt="" className="h-full w-full object-contain" /> : <span className="font-accent text-ink/50 text-xs text-center leading-tight">open</span>}
+    <div className="paper rounded-2xl ink-border p-5 flex flex-col">
+      <div className="font-accent text-pink text-lg leading-none">{tag}</div>
+      <h3 className="font-display text-3xl text-indigo mt-1">{s.name}</h3>
+      <ul className="text-sm text-ink/80 mt-3 space-y-1.5 flex-1">
+        <li><b>Where:</b> {s.size}</li>
+        <li><b>Who sees it:</b> {s.seenBy}</li>
+        <li><b>Reach:</b> {s.views}</li>
+        <li><b>Extra:</b> {s.perk}</li>
+      </ul>
+      <div className="mt-5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="h-10 w-10 shrink-0 rounded-lg bg-white ink-border-soft flex items-center justify-center overflow-hidden">
+            {s.sponsor ? <img src={s.sponsor.logo} alt="" className="h-full w-full object-contain" /> : <span className="font-accent text-ink/40 text-[10px]">open</span>}
+          </div>
+          <div className="text-xs text-ink/70 truncate">{s.sponsor ? <>held by <b>{s.sponsor.name}</b><br />at {fmtUsd(s.currentPriceCents)}</> : "nobody's on it yet"}</div>
+        </div>
+        <button onClick={onBuy} disabled={closed}
+          className="font-display text-lg bg-marigold text-ink px-4 py-2 rounded-lg ink-border-soft hover:bg-pink hover:text-cream transition disabled:opacity-60 whitespace-nowrap">
+          {s.sponsor ? "Take it" : "Buy"} · {fmtUsd(s.nextPriceCents)}
+        </button>
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="font-display text-indigo truncate">{s.name.split(" · ")[1] ?? s.name}</div>
-        <div className="text-xs text-ink/70 truncate">{s.sponsor ? <>held by <b>{s.sponsor.name}</b> at {fmtUsd(s.currentPriceCents)}</> : s.views}</div>
-      </div>
-      <div className="text-right shrink-0">
-        <div className="font-accent text-xs text-pink leading-none">{s.sponsor ? "take over" : "buy now"}</div>
-        <div className="font-display text-xl text-indigo">{fmtUsd(s.nextPriceCents)}</div>
-      </div>
-    </button>
+    </div>
   );
 }

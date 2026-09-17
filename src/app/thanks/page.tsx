@@ -24,7 +24,7 @@ function Thanks() {
   }, [id, paymentId]);
 
   const live = p && p.status !== "pending" && p.status !== "failed";
-  const share = p ? `https://x.com/intent/tweet?text=${encodeURIComponent(`${p.sponsorName} is on an auto rickshaw in Bengaluru for a month 🛺 (${p.slotName}). Take it from us for double → ${process.env.NEXT_PUBLIC_APP_URL || ""}`)}` : "#";
+  const share = p ? `https://x.com/intent/tweet?text=${encodeURIComponent(`${p.sponsorName} is on an auto rickshaw in Bengaluru for a month 🛺 (${p.slotName}). Want it? Take it from us for double → ${process.env.NEXT_PUBLIC_APP_URL || ""}`)}` : "#";
 
   return (
     <main className="flex-1 flex items-center justify-center p-4">
@@ -34,12 +34,12 @@ function Thanks() {
             <div className="sticker inline-block bg-pink text-cream px-4 py-1 rounded text-xl">you&apos;re on it</div>
             <img src={p.logo} alt="" className="h-24 mx-auto object-contain" />
             <h1 className="font-display text-3xl text-indigo">{p.sponsorName}</h1>
-            <p className="text-ink/80">{p.slotName} · holding at <b>{fmtUsd(p.amountCents)}</b>. It&apos;s already showing on the page.</p>
+            <p className="text-ink/80">{p.slotName} is yours at <b>{fmtUsd(p.amountCents)}</b>. Your logo is already on the auto.</p>
             <div className="flex gap-3 justify-center pt-2">
               <a href="/" className="font-display bg-marigold text-ink px-5 py-2 rounded-lg ink-border-soft">See the auto</a>
               <a href={share} target="_blank" rel="noopener" className="font-accent text-lg underline decoration-pink px-3 py-2">tell people</a>
             </div>
-            <p className="text-xs text-ink/60">Bookmark this page. If someone takes your slot for double you&apos;re refunded in full.</p>
+            <p className="text-xs text-ink/60">Bookmark this page. If someone takes your slot for double, you&apos;re refunded in full and can take it back.</p>
           </>
         ) : (
           <>

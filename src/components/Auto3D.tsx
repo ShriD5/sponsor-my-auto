@@ -6,7 +6,7 @@ import * as THREE from "three";
 import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
 
-export type AutoSlots = { hood: SlotState; back: SlotState; tee: SlotState };
+export type AutoSlots = { hood: SlotState; tee: SlotState };
 
 const INK = "#0f1133", CREAM = "#faf3e0", PINK = "#e63e8b", TEAL = "#0e8c8c";
 
@@ -93,7 +93,7 @@ function Wheel({ position }: { position: [number, number, number] }) {
 }
 
 /** Procedural auto rickshaw. +x is forward. Rear face at x = -1.15. */
-function Rickshaw({ tint, slots, onPick }: { tint: string; slots: { hood: SlotState; back: SlotState; tee: SlotState }; onPick: (s: SlotState) => void }) {
+function Rickshaw({ tint, slots, onPick }: { tint: string; slots: AutoSlots; onPick: (s: SlotState) => void }) {
   const mat = (c: string) => <meshToonMaterial color={c} />;
   return (
     <group>
@@ -128,9 +128,7 @@ function Rickshaw({ tint, slots, onPick }: { tint: string; slots: { hood: SlotSt
       {/* garland on rear */}
       <mesh position={[-1.17, 1.9, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.62, 0.035, 8, 24, Math.PI]} /><meshToonMaterial color="#f5a524" /></mesh>
       {/* hood slot: rear of canopy */}
-      <SlotFace slot={slots.hood} w={1.2} h={0.66} position={[-1.16, 1.44, 0]} rotation={[0, -Math.PI / 2, 0]} title="YOUR LOGO" sub="hood · 8–9 sq ft" onPick={onPick} />
-      {/* back panel slot: rear of cabin */}
-      <SlotFace slot={slots.back} w={1.0} h={0.36} position={[-1.16, 0.78, 0]} rotation={[0, -Math.PI / 2, 0]} title="BACK PANEL" sub="3–4 sq ft" onPick={onPick} />
+      <SlotFace slot={slots.hood} w={1.2} h={0.66} position={[-1.16, 1.44, 0]} rotation={[0, -Math.PI / 2, 0]} title="YOUR LOGO" sub="the hood · 8–9 sq ft" onPick={onPick} />
       {/* plate */}
       <Html position={[-1.2, 0.42, 0]} center transform rotation={[0, -Math.PI / 2, 0]} scale={0.25} style={{ pointerEvents: "none" }}>
         <div className="font-display text-ink bg-cream border-2 border-ink px-2 rounded text-[10px]">HORN OK PLEASE</div>
@@ -151,8 +149,7 @@ export const MODEL_CFG = {
   url: "/models/auto.glb",
   yaw: Math.PI / 2,       // raw model nose points +z; rotate so it points +x
   length: 2.6,
-  hood: { y: 0.70, w: 0.34, h: 0.21, xInset: 0.01 },   // rear face, fractions of H (y) and L (w) / H (h)
-  back: { y: 0.33, w: 0.30, h: 0.11, xInset: 0.01 },
+  hood: { y: 0.68, w: 0.36, h: 0.24, xInset: 0.01 },   // rear face, fractions of H (y) and L (w) / H (h)
   tee:  { x: 0.18, y: 0.55, z: 0, w: 0.12, h: 0.14 },   // fractions of L (x), H (y), W (z)
 };
 
@@ -184,10 +181,7 @@ function GlbRickshaw({ slots, onPick, name }: { slots: AutoSlots; onPick: (s: Sl
       )}
       <SlotFace slot={slots.hood} w={L * MODEL_CFG.hood.w} h={H * MODEL_CFG.hood.h}
         position={[rearX - MODEL_CFG.hood.xInset, H * MODEL_CFG.hood.y, 0]} rotation={[0, -Math.PI / 2, 0]}
-        title="YOUR LOGO" sub="hood · 8–9 sq ft" onPick={onPick} />
-      <SlotFace slot={slots.back} w={L * MODEL_CFG.back.w} h={H * MODEL_CFG.back.h}
-        position={[rearX - MODEL_CFG.back.xInset, H * MODEL_CFG.back.y, 0]} rotation={[0, -Math.PI / 2, 0]}
-        title="BACK PANEL" sub="3–4 sq ft" onPick={onPick} />
+        title="YOUR LOGO" sub="the hood · 8–9 sq ft" onPick={onPick} />
       <SlotFace slot={slots.tee} w={L * MODEL_CFG.tee.w} h={H * MODEL_CFG.tee.h}
         position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * MODEL_CFG.tee.z]} rotation={[0, Math.PI / 2, 0]}
         title="TEE" sub="driver" onPick={onPick} occlude />
@@ -227,8 +221,8 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; name
   const gap = 3.4;
   const dbg = debugCam();
   return (
-    <div className={className ?? "w-full h-[420px] sm:h-[520px]"}>
-      <Canvas shadows dpr={[1, 1.75]} camera={{ position: dbg ?? [-6.8, 2.6, 2.4], fov: 36 }} gl={{ antialias: true, alpha: true }}>
+    <div className={className ?? "w-full h-[400px] sm:h-[520px]"}>
+      <Canvas shadows dpr={[1, 1.75]} camera={{ position: dbg ?? (autos.length > 1 ? [-6.8, 2.6, 2.4] : [-4.6, 1.9, 2.2]), fov: 36 }} gl={{ antialias: true, alpha: true }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[4, 7, 3]} intensity={1.4} castShadow />
         <directionalLight position={[-5, 3, -3]} intensity={0.5} color="#e63e8b" />
@@ -240,7 +234,7 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; name
           </group>
         ))}
         <ContactShadows position={[0, 0.02, 0]} opacity={0.6} scale={12} blur={2.2} far={3} color="#000" />
-        <OrbitControls target={[0, 1.0, 0]} enablePan={false} minDistance={4} maxDistance={11} minPolarAngle={0.6} maxPolarAngle={1.5} />
+        <OrbitControls target={[0, 1.0, 0]} enablePan={false} minDistance={3} maxDistance={9} minPolarAngle={0.6} maxPolarAngle={1.5} />
       </Canvas>
     </div>
   );

@@ -77,7 +77,7 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
               className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper" />
             <input required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="yoursite.com"
               className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper" />
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email for the wrap-day photos (optional)"
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email, so we can send wrap-day photos and refund notices (optional)"
               className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper text-sm" />
           </div>
         </div>
@@ -90,7 +90,7 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
             {busy ? "opening checkout…" : `Pay ${fmtUsd(slot.nextPriceCents)} →`}
           </button>
         </div>
-        <p className="text-xs text-ink/60 text-center">No account. Pay, and your logo is on the auto page instantly. If someone takes your slot for double, you get a full refund.</p>
+        <p className="text-xs text-ink/60 text-center">No account. Pay and your logo is on the auto instantly. If someone takes your slot for double, every dollar comes back to you.</p>
       </form>
     </div>
   );

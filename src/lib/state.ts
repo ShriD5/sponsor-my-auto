@@ -22,6 +22,19 @@ export async function ensureSeeded() {
       }))
     ).onConflictDoNothing();
   }
+  // keep unsold slots in sync with the config (price/name edits), and drop retired unsold slots
+  const rows = await db.select().from(schema.slots);
+  const defIds = new Set(SLOT_DEFS.map((d) => d.id));
+  for (const r of rows) {
+    const def = SLOT_DEFS.find((d) => d.id === r.id);
+    if (r.activePurchaseId) continue;
+    if (!def) { await db.delete(schema.slots).where(eq(schema.slots.id, r.id)); continue; }
+    if (r.basePriceCents !== def.basePriceCents || r.name !== def.name) {
+      await db.update(schema.slots)
+        .set({ basePriceCents: def.basePriceCents, currentPriceCents: def.basePriceCents, name: def.name, updatedAt: new Date() })
+        .where(eq(schema.slots.id, r.id));
+    }
+  }
 }
 
 export async function getState() {

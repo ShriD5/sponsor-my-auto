@@ -10,15 +10,15 @@ const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(url),
-  title: "Sponsor My Auto — two rickshaws, one month, your logo",
+  title: "Sponsor My Auto — your logo on a Bengaluru rickshaw for a month",
   description:
-    "Two auto rickshaws in Bengaluru, 30 days on the road. Buy the hood, the back panel, or the driver's tee. Anyone can take your slot for double.",
+    "One auto rickshaw, 30 days on Bengaluru roads. Buy the hood or the driver's tee, no account needed. Anyone can take your slot for double and you get refunded in full.",
   openGraph: {
     title: "Sponsor My Auto",
-    description: "Two rickshaws. One month. Your logo. Take over any slot for 2x.",
+    description: "One rickshaw. One month. Your logo on the hood. Anyone can take it for double.",
     type: "website",
   },
-  twitter: { card: "summary_large_image", title: "Sponsor My Auto", description: "Two rickshaws. One month. Your logo." },
+  twitter: { card: "summary_large_image", title: "Sponsor My Auto", description: "One rickshaw. One month. Your logo on the hood." },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

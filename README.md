@@ -1,6 +1,6 @@
 # Sponsor My Auto
 
-Two auto rickshaws, 30 days, 7 slots. No login: pay → upload logo → live instantly. Any slot can be taken over for 2x; the previous sponsor is auto-refunded.
+One auto rickshaw, 30 days, 3 slots: The Hood ($3,500), The Driver's Tee ($500), The Page ($500). No login: pay → upload logo → live instantly. Any slot can be taken over for 2x; the previous sponsor is auto-refunded. No back panel (not permitted on autos locally).
 
 - Prod: https://sponsor-my-auto.vercel.app
 - Stack: Next.js 16, Neon Postgres (drizzle), Dodo Payments (pay-what-you-want product + per-checkout amount), Vercel.
@@ -19,4 +19,4 @@ Two auto rickshaws, 30 days, 7 slots. No login: pay → upload logo → live ins
 2. `npm run dodo:setup https://sponsor-my-auto.vercel.app` → copy `DODO_PRODUCT_ID` into `.env.local`.
 3. `./scripts/go-live.sh` (pushes Dodo env to Vercel, sets `MOCK_PAY=0`, redeploys).
 
-Edit `SALE_ENDS_AT`, `WRAP_DAY`, driver names/plates in `src/lib/slots.ts`, and the X handle in `src/components/Board.tsx` footer.
+Edit `SALE_ENDS_AT`, `WRAP_DAY`, prices/copy in `src/lib/slots.ts`, and the X handle in `src/components/Board.tsx` footer. Slot price/name edits sync to the DB automatically for unsold slots.
