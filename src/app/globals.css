@@ -78,7 +78,7 @@ body { font-family: var(--font-body); }
   border: 3px solid currentColor; border-radius: 6px; padding: 2px 10px; transform: rotate(-8deg); display: inline-block;
 }
 .huge { font-size: clamp(3rem, 11vw, 9.5rem); line-height: .88; letter-spacing: -.01em; }
-@media (min-width: 1024px) { .huge { font-size: clamp(3.6rem, 5.9vw, 8rem); } }
+@media (min-width: 1024px) { .huge { font-size: clamp(3.4rem, 5.4vw, 8rem); white-space: nowrap; } }
 .stroke { color: transparent; -webkit-text-stroke: 3px var(--color-cream); }
 .stroke-pink { color: transparent; -webkit-text-stroke: 3px var(--color-pink); }
 .sel::selection { background: var(--color-pink); color: var(--color-cream); }
