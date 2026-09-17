@@ -1,10 +1,12 @@
 "use client";
 import { Component, Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { ContactShadows, Html, OrbitControls, RoundedBox, Outlines } from "@react-three/drei";
+import { ContactShadows, Html, OrbitControls, RoundedBox, Outlines, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
+
+export type AutoSlots = { hood: SlotState; back: SlotState; tee: SlotState };
 
 const INK = "#0f1133", CREAM = "#faf3e0", PINK = "#e63e8b", TEAL = "#0e8c8c";
 
@@ -140,13 +142,73 @@ function Rickshaw({ tint, slots, onPick }: { tint: string; slots: { hood: SlotSt
   );
 }
 
+/**
+ * Real model (public/models/auto.glb, fetched via scripts/fetch-model.mjs). The mesh is normalized so the
+ * auto is LENGTH long, sits on y=0, faces +x. Slot faces are placed in fractions of the normalized bbox;
+ * tune these after running scripts/inspect-model.mjs for a new model.
+ */
+export const MODEL_CFG = {
+  url: "/models/auto.glb",
+  yaw: 0,                 // radians to rotate the raw model so its nose points +x
+  length: 2.6,
+  hood: { y: 0.72, w: 0.46, h: 0.26, xInset: 0.005 },   // rear face, fractions of H (y) and L (w) / H (h)
+  back: { y: 0.36, w: 0.40, h: 0.15, xInset: 0.005 },
+  tee:  { x: 0.18, y: 0.55, z: 0, w: 0.12, h: 0.14 },   // fractions of L (x), H (y), W (z)
+};
+
+function GlbRickshaw({ slots, onPick }: { slots: AutoSlots; onPick: (s: SlotState) => void }) {
+  const { scene } = useGLTF(MODEL_CFG.url);
+  const { obj, L, H, W } = useMemo(() => {
+    const obj = scene.clone(true);
+    obj.rotation.y = MODEL_CFG.yaw;
+    obj.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(obj);
+    const size = new THREE.Vector3(); box.getSize(size);
+    const k = MODEL_CFG.length / Math.max(size.x, 1e-3);
+    obj.scale.setScalar(k);
+    obj.updateMatrixWorld(true);
+    const box2 = new THREE.Box3().setFromObject(obj);
+    const c = new THREE.Vector3(); box2.getCenter(c);
+    obj.position.set(-c.x, -box2.min.y, -c.z);
+    obj.traverse((m) => { if ((m as THREE.Mesh).isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    return { obj, L: size.x * k, H: size.y * k, W: size.z * k };
+  }, [scene]);
+  const rearX = -L / 2;
+  return (
+    <group>
+      <primitive object={obj} />
+      <SlotFace slot={slots.hood} w={L * MODEL_CFG.hood.w} h={H * MODEL_CFG.hood.h}
+        position={[rearX - MODEL_CFG.hood.xInset, H * MODEL_CFG.hood.y, 0]} rotation={[0, -Math.PI / 2, 0]}
+        title="YOUR LOGO" sub="hood · 8–9 sq ft" onPick={onPick} />
+      <SlotFace slot={slots.back} w={L * MODEL_CFG.back.w} h={H * MODEL_CFG.back.h}
+        position={[rearX - MODEL_CFG.back.xInset, H * MODEL_CFG.back.y, 0]} rotation={[0, -Math.PI / 2, 0]}
+        title="BACK PANEL" sub="3–4 sq ft" onPick={onPick} />
+      <SlotFace slot={slots.tee} w={L * MODEL_CFG.tee.w} h={H * MODEL_CFG.tee.h}
+        position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * MODEL_CFG.tee.z]} rotation={[0, Math.PI / 2, 0]}
+        title="TEE" sub="driver" onPick={onPick} occlude />
+      <SlotLabel slot={slots.tee} title="DRIVER TEE" onPick={onPick} position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * 0.75]} />
+    </group>
+  );
+}
+
+/** Uses the real GLB when present, falls back to the procedural auto if it is missing or fails to load. */
+const HAS_MODEL = process.env.NEXT_PUBLIC_AUTO_MODEL === "1";
+function AutoModel({ tint, slots, onPick }: { tint: string; slots: AutoSlots; onPick: (s: SlotState) => void }) {
+  if (!HAS_MODEL) return <Rickshaw tint={tint} slots={slots} onPick={onPick} />;
+  return (
+    <TexBoundary fallback={<Rickshaw tint={tint} slots={slots} onPick={onPick} />}>
+      <Suspense fallback={null}>
+        <GlbRickshaw slots={slots} onPick={onPick} />
+      </Suspense>
+    </TexBoundary>
+  );
+}
+
 function Turntable({ children, speed = 0.15 }: { children: React.ReactNode; speed?: number }) {
   const ref = useRef<THREE.Group>(null);
   useFrame((_, dt) => { if (ref.current) ref.current.rotation.y += dt * speed; });
   return <group ref={ref}>{children}</group>;
 }
-
-export type AutoSlots = { hood: SlotState; back: SlotState; tee: SlotState };
 
 export function Auto3D({ autos, onPick, className }: { autos: { id: string; tint: string; slots: AutoSlots }[]; onPick: (s: SlotState) => void; className?: string }) {
   const gap = 2.6;
@@ -159,7 +221,7 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; tint
         <Turntable>
           {autos.map((a, i) => (
             <group key={a.id} position={[0, 0, (i - (autos.length - 1) / 2) * gap]} rotation={[0, 0.25, 0]}>
-              <Rickshaw tint={a.tint} slots={a.slots} onPick={onPick} />
+              <AutoModel tint={a.tint} slots={a.slots} onPick={onPick} />
             </group>
           ))}
         </Turntable>
