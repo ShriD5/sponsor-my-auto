@@ -228,7 +228,7 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; name
   const dbg = debugCam();
   return (
     <div className={className ?? "w-full h-[420px] sm:h-[520px]"}>
-      <Canvas shadows dpr={[1, 1.75]} camera={{ position: dbg ?? [-6.6, 2.7, 4.2], fov: 36 }} gl={{ antialias: true, alpha: true }}>
+      <Canvas shadows dpr={[1, 1.75]} camera={{ position: dbg ?? [-7.4, 2.6, 2.0], fov: 36 }} gl={{ antialias: true, alpha: true }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[4, 7, 3]} intensity={1.4} castShadow />
         <directionalLight position={[-5, 3, -3]} intensity={0.5} color="#e63e8b" />
