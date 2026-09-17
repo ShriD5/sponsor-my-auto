@@ -228,17 +228,17 @@ export function Auto3D({ autos, onPick, className }: { autos: { id: string; name
   const dbg = debugCam();
   return (
     <div className={className ?? "w-full h-[420px] sm:h-[520px]"}>
-      <Canvas shadows dpr={[1, 1.75]} camera={{ position: dbg ?? [-7.4, 2.6, 2.0], fov: 36 }} gl={{ antialias: true, alpha: true }}>
+      <Canvas shadows dpr={[1, 1.75]} camera={{ position: dbg ?? [-6.8, 2.6, 2.4], fov: 36 }} gl={{ antialias: true, alpha: true }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[4, 7, 3]} intensity={1.4} castShadow />
         <directionalLight position={[-5, 3, -3]} intensity={0.5} color="#e63e8b" />
-        <Turntable>
-          {autos.map((a, i) => (
-            <group key={a.id} position={[0, 0, (i - (autos.length - 1) / 2) * gap]} rotation={[0, dbg ? 0 : 0.25, 0]}>
+        {autos.map((a, i) => (
+          <group key={a.id} position={[0, 0, (i - (autos.length - 1) / 2) * gap]}>
+            <Turntable speed={0.18}>
               <AutoModel tint={a.tint} slots={a.slots} onPick={onPick} name={a.name} />
-            </group>
-          ))}
-        </Turntable>
+            </Turntable>
+          </group>
+        ))}
         <ContactShadows position={[0, 0.02, 0]} opacity={0.6} scale={12} blur={2.2} far={3} color="#000" />
         <OrbitControls target={[0, 1.0, 0]} enablePan={false} minDistance={4} maxDistance={11} minPolarAngle={0.6} maxPolarAngle={1.5} />
       </Canvas>
