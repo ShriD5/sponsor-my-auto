@@ -44,10 +44,18 @@ async function drawSticker(slot: SlotState, aspect: number): Promise<HTMLCanvasE
     }
     if (footer) {
       g.fillStyle = INK; g.fillRect(pad, H - pad - footer, W - pad * 2, footer);
-      g.fillStyle = CREAM; g.font = `${Math.round(footer * 0.55)}px ${display}`; g.textAlign = "left"; g.textBaseline = "middle";
-      g.fillText(`${slot.sponsor.name.toUpperCase()} · ${fmtUsd(slot.currentPriceCents)}`, pad * 3, H - pad - footer / 2);
-      g.fillStyle = PINK; g.font = `${Math.round(footer * 0.5)}px ${accent}`; g.textAlign = "right";
-      g.fillText(`take it for ${fmtUsd(slot.nextPriceCents)} →`, W - pad * 3, H - pad - footer / 2);
+      const y = H - pad - footer / 2, avail = W - pad * 6;
+      const right = `take it for ${fmtUsd(slot.nextPriceCents)} →`;
+      g.font = `${Math.round(footer * 0.44)}px ${accent}`; const rw = g.measureText(right).width;
+      const left = `${slot.sponsor.name.toUpperCase()} · ${fmtUsd(slot.currentPriceCents)}`;
+      g.font = `${Math.round(footer * 0.46)}px ${display}`; const lw = g.measureText(left).width;
+      g.textBaseline = "middle";
+      if (lw + rw + pad * 2 <= avail) {
+        g.fillStyle = CREAM; g.textAlign = "left"; g.fillText(left, pad * 3, y);
+        g.fillStyle = PINK; g.font = `${Math.round(footer * 0.44)}px ${accent}`; g.textAlign = "right"; g.fillText(right, W - pad * 3, y);
+      } else {
+        g.fillStyle = PINK; g.font = `${Math.round(footer * 0.44)}px ${accent}`; g.textAlign = "center"; g.fillText(right, W / 2, y);
+      }
     }
     return c;
   }
