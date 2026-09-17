@@ -1,6 +1,6 @@
 # Sponsor My Auto
 
-One auto rickshaw, 30 days, 3 slots: The Hood ($3,500), The Driver's Tee ($500), The Page ($500). No login: pay → upload logo → live instantly. Any slot can be taken over for 2x; the previous sponsor is auto-refunded. No back panel (not permitted on autos locally).
+One auto rickshaw, 30 days, 4 slots: The Hood ($3,500), The Visor ($750), The Driver's Tee ($500), The Page ($500). No login: pay → upload logo → live instantly. Any slot can be taken over for 2x; the previous sponsor is auto-refunded. No back panel (not permitted on autos locally).
 
 - Prod: https://sponsor-my-auto.vercel.app
 - Stack: Next.js 16, Neon Postgres (drizzle), Dodo Payments (pay-what-you-want product + per-checkout amount), Vercel.

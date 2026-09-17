@@ -6,22 +6,23 @@ import * as THREE from "three";
 import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
 
-export type AutoSlots = { hood: SlotState; tee: SlotState };
+export type AutoSlots = { hood: SlotState; visor: SlotState; tee: SlotState };
 
 const INK = "#0f1133", CREAM = "#faf3e0", PINK = "#e63e8b", TEAL = "#0e8c8c";
 
 /** canvas-drawn placeholder texture ("YOUR LOGO" on cream) */
-function useLabelTexture(title: string, sub: string) {
+function useLabelTexture(title: string, sub: string, wide = false) {
   return useMemo(() => {
-    const c = document.createElement("canvas"); c.width = 512; c.height = 256;
+    const c = document.createElement("canvas"); c.width = wide ? 1024 : 512; c.height = 256;
     const g = c.getContext("2d")!;
-    g.fillStyle = CREAM; g.fillRect(0, 0, 512, 256);
-    for (let x = 4; x < 512; x += 10) for (let y = 4; y < 256; y += 10) { g.fillStyle = "rgba(27,31,92,.08)"; g.beginPath(); g.arc(x, y, 1.2, 0, 7); g.fill(); }
-    g.fillStyle = "#1b1f5c"; g.font = "bold 58px 'Titan One', Impact, sans-serif"; g.textAlign = "center"; g.fillText(title, 256, 124);
-    g.fillStyle = PINK; g.font = "36px Kalam, cursive"; g.fillText(sub, 256, 190);
+    const cx = c.width / 2;
+    g.fillStyle = CREAM; g.fillRect(0, 0, c.width, 256);
+    for (let x = 4; x < c.width; x += 10) for (let y = 4; y < 256; y += 10) { g.fillStyle = "rgba(27,31,92,.08)"; g.beginPath(); g.arc(x, y, 1.2, 0, 7); g.fill(); }
+    g.fillStyle = "#1b1f5c"; g.font = `bold ${wide ? 120 : 58}px 'Titan One', Impact, sans-serif`; g.textAlign = "center"; g.fillText(title, cx, wide ? 150 : 124);
+    if (!wide) { g.fillStyle = PINK; g.font = "36px Kalam, cursive"; g.fillText(sub, cx, 190); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
     return t;
-  }, [title, sub]);
+  }, [title, sub, wide]);
 }
 
 function LogoTex({ src, w, h }: { src: string; w: number; h: number }) {
@@ -45,10 +46,10 @@ class TexBoundary extends Component<{ fallback: React.ReactNode; children: React
   render() { return this.state.err ? this.props.fallback : this.props.children; }
 }
 
-function SlotLabel({ slot, title, onPick, position }: { slot: SlotState; title: string; onPick: (s: SlotState) => void; position: [number, number, number] }) {
+function SlotLabel({ slot, title, onPick, position, occlude }: { slot: SlotState; title: string; onPick: (s: SlotState) => void; position: [number, number, number]; occlude?: boolean }) {
   const label = slot.sponsor ? `${slot.sponsor.name} · ${fmtUsd(slot.currentPriceCents)}` : title;
   return (
-    <Html position={position} center zIndexRange={[20, 0]} style={{ pointerEvents: "auto" }}>
+    <Html position={position} center zIndexRange={[20, 0]} occlude={occlude ? true : undefined} style={{ pointerEvents: "auto", transition: "opacity .25s" }}>
       <button onClick={() => onPick(slot)}
         className="whitespace-nowrap font-display text-xs sm:text-sm bg-marigold text-ink px-2.5 py-1 rounded-md shadow-[3px_3px_0_#0f1133] border-2 border-ink hover:bg-pink hover:text-cream transition">
         {label} <span className="text-pink font-accent">{slot.sponsor ? "→ take " : "→ "}{fmtUsd(slot.nextPriceCents)}</span>
@@ -59,7 +60,7 @@ function SlotLabel({ slot, title, onPick, position }: { slot: SlotState; title: 
 
 function SlotFace({ slot, w, h, position, rotation, title, sub, onPick, occlude }:
   { slot: SlotState; w: number; h: number; position: [number, number, number]; rotation: [number, number, number]; title: string; sub: string; onPick: (s: SlotState) => void; occlude?: boolean }) {
-  const ph = useLabelTexture(title, sub);
+  const ph = useLabelTexture(title, sub, w / h > 3);
   const hover = useRef(false);
   return (
     <group position={position} rotation={rotation}>
@@ -78,7 +79,7 @@ function SlotFace({ slot, w, h, position, rotation, title, sub, onPick, occlude 
         {/* ink frame */}
         <mesh position={[0, 0, -0.004]}><planeGeometry args={[w + 0.06, h + 0.06]} /><meshToonMaterial color={INK} /></mesh>
       </group>
-      {!occlude && <SlotLabel slot={slot} title={title} onPick={onPick} position={[0, h / 2 + 0.12, 0.05]} />}
+      {!occlude && <SlotLabel slot={slot} title={title} onPick={onPick} position={[0, h / 2 + 0.12, 0.08]} occlude />}
     </group>
   );
 }
@@ -127,6 +128,8 @@ function Rickshaw({ tint, slots, onPick }: { tint: string; slots: AutoSlots; onP
       </group>
       {/* garland on rear */}
       <mesh position={[-1.17, 1.9, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.62, 0.035, 8, 24, Math.PI]} /><meshToonMaterial color="#f5a524" /></mesh>
+      {/* visor: front strip of canopy */}
+      <SlotFace slot={slots.visor} w={1.0} h={0.16} position={[0.56, 1.78, 0]} rotation={[0, Math.PI / 2, 0]} title="YOUR NAME HERE" sub="the visor" onPick={onPick} />
       {/* hood slot: rear of canopy */}
       <SlotFace slot={slots.hood} w={1.2} h={0.66} position={[-1.16, 1.44, 0]} rotation={[0, -Math.PI / 2, 0]} title="YOUR LOGO HERE" sub="tap to take the hood" onPick={onPick} />
       {/* plate */}
@@ -151,6 +154,7 @@ export const MODEL_CFG = {
   length: 2.6,
   hood: { y: 0.68, w: 0.36, h: 0.24, xInset: 0.01 },   // rear face, fractions of H (y) and L (w) / H (h)
   tee:  { x: 0.18, y: 0.55, z: 0, w: 0.12, h: 0.14 },   // fractions of L (x), H (y), W (z)
+  visor: { y: 0.84, w: 0.30, h: 0.075, xInset: 0.01 },  // front face strip above the windshield
 };
 
 function GlbRickshaw({ slots, onPick, name }: { slots: AutoSlots; onPick: (s: SlotState) => void; name?: string }) {
@@ -182,10 +186,13 @@ function GlbRickshaw({ slots, onPick, name }: { slots: AutoSlots; onPick: (s: Sl
       <SlotFace slot={slots.hood} w={L * MODEL_CFG.hood.w} h={H * MODEL_CFG.hood.h}
         position={[rearX - MODEL_CFG.hood.xInset, H * MODEL_CFG.hood.y, 0]} rotation={[0, -Math.PI / 2, 0]}
         title="YOUR LOGO HERE" sub="tap to take the hood" onPick={onPick} />
+      <SlotFace slot={slots.visor} w={L * MODEL_CFG.visor.w} h={H * MODEL_CFG.visor.h}
+        position={[L / 2 + MODEL_CFG.visor.xInset, H * MODEL_CFG.visor.y, 0]} rotation={[0, Math.PI / 2, 0]}
+        title="YOUR NAME HERE" sub="the visor" onPick={onPick} />
       <SlotFace slot={slots.tee} w={L * MODEL_CFG.tee.w} h={H * MODEL_CFG.tee.h}
         position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * MODEL_CFG.tee.z]} rotation={[0, Math.PI / 2, 0]}
         title="YOUR LOGO" sub="tee" onPick={onPick} occlude />
-      <SlotLabel slot={slots.tee} title="THE TEE" onPick={onPick} position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * 0.75]} />
+      <SlotLabel slot={slots.tee} title="THE TEE" onPick={onPick} position={[L * MODEL_CFG.tee.x, H * MODEL_CFG.tee.y, W * 1.05]} />
     </group>
   );
 }

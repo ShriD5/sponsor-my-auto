@@ -10,7 +10,7 @@ const Auto3D = dynamic(() => import("./Auto3D").then((m) => m.Auto3D), { ssr: fa
 
 type State = { slots: SlotState[]; raisedCents: number; saleEndsAt: string | null; wrapDay: string | null; mock: boolean };
 
-const MARQUEE = ["HORN OK PLEASE", "ONE AUTO", "30 DAYS", "8–12K EYEBALLS A DAY", "NO LOGIN", "TAKE IT FOR 2X", "BENGALURU", "YOUR LOGO HERE"];
+const MARQUEE = ["HORN OK PLEASE", "ONE AUTO", "FOUR SLOTS", "30 DAYS", "8–12K EYEBALLS A DAY", "NO LOGIN", "TAKE IT FOR 2X", "BENGALURU", "YOUR LOGO HERE"];
 
 export function Board({ initial }: { initial: State }) {
   const [state, setState] = useState(initial);
@@ -24,7 +24,7 @@ export function Board({ initial }: { initial: State }) {
   }, []);
 
   const slot = (id: string) => state.slots.find((s) => s.id === id)!;
-  const hood = slot("a1-hood"), tee = slot("a1-tee"), page = slot("site-page");
+  const hood = slot("a1-hood"), visor = slot("a1-visor"), tee = slot("a1-tee"), page = slot("site-page");
   const closed = state.saleEndsAt ? Date.now() > Date.parse(state.saleEndsAt) : false;
   const pick = (s: SlotState) => { if (!closed) setOpen(s); };
   const wrap = state.wrapDay ? new Date(state.wrapDay).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "wrap day";
@@ -60,7 +60,7 @@ export function Board({ initial }: { initial: State }) {
 
         {/* the auto: stacked on mobile, full-bleed behind the type from sm up */}
         <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[44%] sm:z-0">
-          <Auto3D autos={[{ id: AUTO.id, tint: "#f5a524", slots: { hood, tee } }]} onPick={pick} className="w-full h-full" />
+          <Auto3D autos={[{ id: AUTO.id, tint: "#f5a524", slots: { hood, visor, tee } }]} onPick={pick} className="w-full h-full" />
         </div>
 
         {/* bottom row */}
@@ -83,7 +83,7 @@ export function Board({ initial }: { initial: State }) {
             <Countdown endsAt={state.saleEndsAt} />
           </div>
         </div>
-        <div className="absolute z-10 top-6 right-8 hidden lg:block font-accent text-cream/60 text-sm pointer-events-none mt-12">← drag to spin · tap the hood to take it</div>
+        <div className="absolute z-10 top-6 right-8 hidden lg:block font-accent text-cream/60 text-sm pointer-events-none mt-12">← drag to spin · tap any part to take it</div>
       </section>
 
       {/* marquee */}
@@ -94,12 +94,14 @@ export function Board({ initial }: { initial: State }) {
       {/* ===== SLOTS ===== */}
       <section id="slots" className="max-w-6xl mx-auto px-5 py-20">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <h2 className="font-display text-5xl sm:text-7xl text-cream leading-none">Three slots.<br /><span className="text-pink">That&apos;s the whole menu.</span></h2>
+          <h2 className="font-display text-5xl sm:text-7xl text-cream leading-none">Four slots.<br /><span className="text-pink">That&apos;s the whole menu.</span></h2>
           <p className="font-accent text-marigold text-2xl max-w-xs">tap, pay, upload. you&apos;re on the auto before your bank texts you.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-8 mt-12">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8 mt-12">
           <SlotCard s={hood} onBuy={() => pick(hood)} closed={closed} tag="THE BIG ONE" r="-1.5deg"
             lines={["8–9 sq ft of rear hood", "270°: behind it and both sides", "~10k eyeballs a day", "Printed panels shipped to you after"]} />
+          <SlotCard s={visor} onBuy={() => pick(visor)} closed={closed} tag="THE FACE" r="0.9deg"
+            lines={["Front strip above the windshield", "Seen by everything the auto drives at", "Where drivers put their own name", "Your name instead, for a month"]} />
           <SlotCard s={tee} onBuy={() => pick(tee)} closed={closed} tag="THE CLOSE-UP" r="1.2deg"
             lines={["Front of the driver's tee", "Every rider, every ride, 15 min each", "In every photo and video we post", "Driver says your tagline on camera"]} />
           <SlotCard s={page} onBuy={() => pick(page)} closed={closed} tag="THE INTERNET" r="-0.8deg"

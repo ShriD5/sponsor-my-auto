@@ -1,4 +1,4 @@
-export type SlotKind = "hood" | "tee" | "page";
+export type SlotKind = "hood" | "visor" | "tee" | "page";
 
 export type SlotDef = {
   id: string;
@@ -22,6 +22,14 @@ export const SLOT_DEFS: SlotDef[] = [
     seenBy: "Every car, bike, and bus stuck behind the auto at a signal, plus both sides",
     views: "8,500–12,000 eyeballs / day",
     perk: "The printed hood panels are shipped to you when the month ends",
+  },
+  {
+    id: "a1-visor", autoId: "a1", kind: "visor", name: "The Visor",
+    basePriceCents: 75000,
+    size: "The strip across the front of the canopy, above the windshield",
+    seenBy: "Oncoming traffic and everyone on the footpath the auto drives toward",
+    views: "Front-facing, all day",
+    perk: "The spot autos usually save for the driver's own name. This month it's yours.",
   },
   {
     id: "a1-tee", autoId: "a1", kind: "tee", name: "The Driver's Tee",
