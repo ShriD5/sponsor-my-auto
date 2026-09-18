@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   let link: URL;
   try { link = new URL(url); if (!/^https?:$/.test(link.protocol)) throw 0; } catch { return NextResponse.json({ error: "valid http(s) link required" }, { status: 400 }); }
   if (!logo || !logo.startsWith("data:image/") || logo.length > MAX_LOGO) return NextResponse.json({ error: "logo required (PNG/JPG/WebP/SVG, ≤400KB)" }, { status: 400 });
-  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: "bad email" }, { status: 400 });
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ error: "email required, so we can refund you if someone takes your slot" }, { status: 400 });
 
   if (process.env.SALE_ENDS_AT && Date.now() > Date.parse(process.env.SALE_ENDS_AT)) {
     return NextResponse.json({ error: "sale closed" }, { status: 400 });
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   const [purchase] = await db.insert(schema.purchases).values({
     slotId: def.id, sponsorName: sponsorName.trim(), url: link.toString(), logoData: logo,
-    email: email || null, amountCents: amount, isMock: mock, ip,
+    email, amountCents: amount, isMock: mock, ip,
   }).returning();
 
   const origin = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const session = await dodo().checkoutSessions.create({
     product_cart: [{ product_id: process.env.DODO_PRODUCT_ID!, quantity: 1, amount }],
     return_url: `${origin}/thanks?p=${purchase.id}`,
-    customer: email ? { email, name: sponsorName.trim() } : undefined,
+    customer: { email, name: sponsorName.trim() },
     metadata: { purchase_id: purchase.id, slot_id: def.id, sponsor: sponsorName.trim().slice(0, 40) },
     feature_flags: { redirect_immediately: false },
   });

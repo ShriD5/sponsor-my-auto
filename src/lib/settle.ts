@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { dodo, isMockPay } from "./dodo";
+import { emailLive, emailOutbid } from "./email";
+import { slotById } from "./slots";
 
 /**
  * Mark a purchase paid, make it the slot's active sponsor, supersede + refund the previous one.
@@ -40,7 +42,9 @@ export async function settlePaid(purchaseId: string, paymentId: string | null, p
         status = "refunded";
       }
       await db.update(schema.purchases).set({ status, refundId }).where(eq(schema.purchases.id, prevId));
+      void emailOutbid(prev, slotById(p.slotId)?.name ?? p.slotId, amount);
     }
   }
+  void emailLive({ ...p, amountCents: amount }, slotById(p.slotId)?.name ?? p.slotId);
   return { ...p, status: "paid" };
 }

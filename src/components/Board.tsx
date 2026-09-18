@@ -203,6 +203,7 @@ export function Board({ initial }: { initial: State }) {
 
       <footer className="border-t border-cream/10 py-8 text-center font-accent text-cream/70">
         Built by Shrithan · <a className="underline decoration-marigold" href="https://x.com/" target="_blank" rel="noopener">@handle</a> · Month 2 opens after wrap day
+        <div className="mt-2 text-sm text-cream/50 flex gap-4 justify-center"><a className="hover:text-marigold" href="/terms">terms</a><a className="hover:text-marigold" href="/refund-policy">refunds</a><a className="hover:text-marigold" href="/content-policy">content</a><a className="hover:text-marigold" href="/privacy">privacy</a></div>
         {state.mock && <div className="mt-2 text-pink">test mode: payments are mocked</div>}
         <div className="mt-3 text-xs text-cream/50">3D model: <a className="underline" href="https://skfb.ly/oKDIs" target="_blank" rel="noopener">&quot;Tuk Tuk Rikshaw&quot;</a> by alnmathew, <a className="underline" href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></div>
       </footer>
