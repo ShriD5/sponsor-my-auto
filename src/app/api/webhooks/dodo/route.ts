@@ -33,8 +33,18 @@ export async function POST(req: NextRequest) {
     if (purchaseId) await settlePaid(purchaseId, d.payment_id, d.total_amount);
   } else if (evt.type === "refund.succeeded") {
     const d = evt.data as { payment_id: string; refund_id: string };
-    await db.update(schema.purchases).set({ status: "refunded", refundId: d.refund_id })
-      .where(and(eq(schema.purchases.paymentId, d.payment_id), eq(schema.purchases.status, "superseded")));
+    const [p] = await db.update(schema.purchases).set({ status: "refunded", refundId: d.refund_id })
+      .where(eq(schema.purchases.paymentId, d.payment_id))
+      .returning();
+    // Manual Dodo refund of the current holder: vacate the slot so it goes back on sale at the base price.
+    if (p) {
+      const [slot] = await db.select().from(schema.slots).where(eq(schema.slots.activePurchaseId, p.id));
+      if (slot) {
+        await db.update(schema.slots)
+          .set({ activePurchaseId: null, currentPriceCents: slot.basePriceCents, updatedAt: new Date() })
+          .where(eq(schema.slots.id, slot.id));
+      }
+    }
   } else if (evt.type === "payment.failed") {
     const d = evt.data as { metadata?: Record<string, string> };
     if (d.metadata?.purchase_id) await db.update(schema.purchases).set({ status: "failed" }).where(and(eq(schema.purchases.id, d.metadata.purchase_id), eq(schema.purchases.status, "pending")));

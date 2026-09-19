@@ -41,7 +41,7 @@ export const SLOT_DEFS: SlotDef[] = [
   },
   {
     id: "site-page", autoId: "site", kind: "page", name: "The Page", short: "THE PAGE",
-    basePriceCents: 50000, tag: "THE INTERNET",
+    basePriceCents: 100, tag: "THE INTERNET",
     lines: ["Presented-by banner on this site", "Named in every post for the month", "Your logo and link on this site all month", "Cheapest way into the story"],
   },
 ];
