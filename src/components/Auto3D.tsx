@@ -136,7 +136,8 @@ function FitCamera({ base }: { base: [number, number, number] }) {
   const { camera, size } = useThree();
   useEffect(() => {
     const aspect = size.width / Math.max(size.height, 1);
-    const k = aspect < 0.8 ? 1.7 : aspect < 1.2 ? 1.12 : 1;
+    // portrait phones need to back off to fit the length; anything squarer or wider gets the auto big
+    const k = aspect < 0.8 ? 1.7 : aspect < 1.2 ? 1.22 : 1.02;
     camera.position.set(base[0] * k, base[1] * k * 0.95, base[2] * k);
     camera.lookAt(0, 0.9, 0);
   }, [camera, size, base]);
@@ -158,7 +159,7 @@ function Turntable({ children, speed = 0.15 }: { children: React.ReactNode; spee
 
 export function Auto3D({ slots, onPick, className }: { slots: AutoSlotMap; onPick: (s: SlotState) => void; className?: string }) {
   const dbg = debugCam();
-  const base: [number, number, number] = dbg ?? [-4.4, 1.7, 2.6];
+  const base: [number, number, number] = dbg ?? [-4.0, 1.55, 2.35];
   return (
     <div className={className ?? "w-full h-[400px] sm:h-[520px]"}>
       <Canvas shadows dpr={[1, 1.75]} camera={{ position: base, fov: 36 }} gl={{ antialias: true, alpha: true }}>

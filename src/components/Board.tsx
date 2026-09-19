@@ -64,7 +64,7 @@ export function Board({ initial }: { initial: State }) {
         </div>
 
         {/* the auto: stacked on mobile, full-bleed behind the type from sm up */}
-        <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[44%] sm:z-0" role="img" aria-label="Interactive 3D Bengaluru auto-rickshaw (tuk tuk) showing the five sponsor sticker slots">
+        <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[30%] sm:z-0" role="img" aria-label="Interactive 3D Bengaluru auto-rickshaw (tuk tuk) showing the five sponsor sticker slots">
           <Auto3D slots={autoSlots} onPick={pick} className="w-full h-full" />
         </div>
 
