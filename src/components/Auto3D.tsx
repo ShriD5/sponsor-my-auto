@@ -127,8 +127,9 @@ class Boundary extends Component<{ children: React.ReactNode }, { err: boolean }
 
 function debugCam(): [number, number, number] | null {
   if (typeof window === "undefined") return null;
-  const c = new URLSearchParams(window.location.search).get("cam");
-  const d = 6;
+  const q = new URLSearchParams(window.location.search);
+  const c = q.get("cam");
+  const d = q.has("mock") ? 4.1 : 6; // mockups: tighter framing for reply images
   return c === "rear" ? [-d, 1.6, 0.01] : c === "front" ? [d, 1.6, 0.01] : c === "side" ? [0.01, 1.6, d] : c === "side2" ? [0.01, 1.6, -d] : c === "top" ? [0.01, d + 1, 0.01] : null;
 }
 

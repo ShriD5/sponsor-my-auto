@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, uuid, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, uuid, boolean, index } from "drizzle-orm/pg-core";
 
 export const slots = pgTable("slots", {
   id: text("id").primaryKey(),               // e.g. "a1-hood"
