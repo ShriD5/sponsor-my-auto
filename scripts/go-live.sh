@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # After pasting DODO_PAYMENTS_API_KEY into .env.local:
-#   npm run dodo:setup https://sponsor-my-auto.vercel.app   (creates product + webhook, writes .dodo-secret)
+#   npm run dodo:setup https://sponsormyauto.lol   (creates product + webhook, writes .dodo-secret)
 #   then paste the printed DODO_PRODUCT_ID into .env.local and run:  ./scripts/go-live.sh
 set -e
 set -a; . ./.env.local; set +a
@@ -12,4 +12,7 @@ add DODO_PRODUCT_ID "$DODO_PRODUCT_ID"
 add DODO_WEBHOOK_SECRET "$SECRET"
 add DODO_PAYMENTS_ENVIRONMENT "${DODO_PAYMENTS_ENVIRONMENT:-live_mode}"
 add MOCK_PAY "0"
+add NEXT_PUBLIC_APP_URL "${NEXT_PUBLIC_APP_URL_PROD:-https://sponsormyauto.lol}"
+add EMAIL_FROM "$EMAIL_FROM"
+add EMAIL_REPLY_TO "${EMAIL_REPLY_TO:-shrithanofficial@gmail.com}"
 npx vercel deploy --prod --yes --scope shrithans-personal | tail -3

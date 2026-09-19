@@ -5,10 +5,15 @@ import { fmtUsd } from "./slots";
 async function send(to: string, subject: string, html: string) {
   const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM;
   if (!key || !from || !to) return;
-  try { await new Resend(key).emails.send({ from, to, subject, html }); } catch (e) { console.error("email failed", e); }
+  try {
+    await new Resend(key).emails.send({
+      from, to, subject, html,
+      replyTo: process.env.EMAIL_REPLY_TO || undefined,
+    });
+  } catch (e) { console.error("email failed", e); }
 }
 
-const origin = () => process.env.NEXT_PUBLIC_APP_URL || "https://sponsor-my-auto.vercel.app";
+const origin = () => process.env.NEXT_PUBLIC_APP_URL || "https://sponsormyauto.lol";
 const wrap = (body: string) => `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#0f1133"><h1 style="font-size:22px;margin:0 0 12px">Sponsor My Auto</h1>${body}<p style="color:#666;font-size:12px;margin-top:28px">Questions? Reply to this email.</p></div>`;
 
 export async function emailLive(p: { email: string | null; sponsorName: string; amountCents: number; id: string }, slotName: string) {

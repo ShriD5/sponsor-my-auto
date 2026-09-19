@@ -1,6 +1,6 @@
 /**
  * One-time Dodo setup. Needs DODO_PAYMENTS_API_KEY (+ DODO_PAYMENTS_ENVIRONMENT) in env.
- *   npx tsx --env-file=.env.local scripts/dodo-setup.ts https://your-host.vercel.app
+ *   npx tsx --env-file=.env.local scripts/dodo-setup.ts https://sponsormyauto.lol
  * Creates a pay-what-you-want product (min $1) used for every slot with a per-checkout amount,
  * and a webhook for payment.succeeded, payment.failed, and refund.succeeded.
  * Prints IDs; the webhook secret is written to .dodo-secret (gitignored).

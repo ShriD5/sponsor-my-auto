@@ -16,7 +16,7 @@ export default async function OG() {
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: "#0f1133", color: "#faf3e0", padding: 56, fontFamily: "Impact, Arial Black, sans-serif", position: "relative" }}>
         <div style={{ display: "flex", position: "absolute", inset: 0, background: "radial-gradient(60% 60% at 75% 50%, rgba(245,165,36,.45), rgba(230,62,139,.15) 45%, transparent 70%)" }} />
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28, color: "#f5a524" }}>
-          <span>ऑटो · ಆಟೋ · auto</span><span>sponsor-my-auto.vercel.app</span>
+          <span>ऑटो · ಆಟೋ · auto · tuk tuk</span><span>sponsormyauto.lol</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", marginTop: 40, lineHeight: 0.95 }}>
           <div style={{ display: "flex", fontSize: 120 }}>YOUR LOGO.</div>
