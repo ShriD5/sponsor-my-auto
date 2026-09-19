@@ -41,3 +41,26 @@ export const visitors = pgTable("visitors", {
   lastSeen: timestamp("last_seen", { withTimezone: true }).defaultNow().notNull(),
   views: integer("views").default(1).notNull(),
 });
+
+/**
+ * First-party analytics. One row per page view and per funnel step (slot modal opened, checkout started).
+ * No IP, no cookies: geo comes from Vercel's request headers and is stored at city granularity.
+ */
+export const events = pgTable("events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  visitorId: text("visitor_id").notNull(),
+  kind: text("kind").notNull(),                // view | modal | checkout
+  path: text("path"),
+  slotId: text("slot_id"),
+  referrer: text("referrer"),                  // host only, e.g. "t.co"
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  country: text("country"),                    // ISO-2
+  region: text("region"),
+  city: text("city"),
+  device: text("device"),                      // mobile | tablet | desktop
+  browser: text("browser"),
+  os: text("os"),
+  ts: timestamp("ts", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index("events_ts_idx").on(t.ts), index("events_kind_ts_idx").on(t.kind, t.ts)]);

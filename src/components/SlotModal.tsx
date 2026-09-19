@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
 import { drawSticker, SLOT_ASPECT } from "./sticker";
+import { track } from "./usePresence";
 
 const MAX_BYTES = 380_000;
 
@@ -97,6 +98,7 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
         body: JSON.stringify({ slotId: slot.id, sponsorName: name, url: url.startsWith("http") ? url : `https://${url}`, logo, email }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Something broke");
+      track("checkout", slot.id);
       window.location.href = j.url;
     } catch (e) { setErr((e as Error).message); setBusy(false); }
   }

@@ -5,7 +5,7 @@ import { Countdown } from "./Countdown";
 import { SlotModal } from "./SlotModal";
 import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
-import { usePresence } from "./usePresence";
+import { usePresence, track } from "./usePresence";
 
 const Auto3D = dynamic(() => import("./Auto3D").then((m) => m.Auto3D), { ssr: false, loading: () => null });
 
@@ -30,7 +30,7 @@ export function Board({ initial }: { initial: State }) {
   const autoSlots = { hood, visor: slot("a1-visor"), "side-l": slot("a1-side-l"), "side-r": slot("a1-side-r"), top: slot("a1-top") };
   const physical = state.slots.filter((s) => s.autoId === "a1");
   const closed = state.saleEndsAt ? Date.now() > Date.parse(state.saleEndsAt) : false;
-  const pick = (s: SlotState) => { if (!closed) setOpen(s); };
+  const pick = (s: SlotState) => { if (!closed) { setOpen(s); track("modal", s.id); } };
   const wrap = state.wrapDay ? (() => { const d = new Date(state.wrapDay); const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; return `${d.getUTCDate()} ${M[d.getUTCMonth()]}`; })() : "wrap day";
 
   return (
