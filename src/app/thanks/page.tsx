@@ -10,14 +10,18 @@ function Thanks() {
   const id = sp.get("p"); const paymentId = sp.get("payment_id");
   const [p, setP] = useState<P | null>(null);
   const [tries, setTries] = useState(0);
+  const [missing, setMissing] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     let stop = false;
     const tick = async () => {
-      const r = await fetch(`/api/purchases/${id}${paymentId ? `?payment_id=${encodeURIComponent(paymentId)}` : ""}`, { cache: "no-store" });
-      if (r.ok) { const j = await r.json(); if (!stop) setP(j); if (j.status !== "pending" && !(j.status === "expired" && paymentId)) return; }
-      if (!stop) { setTries((t) => t + 1); setTimeout(tick, 2500); }
+      try {
+        const r = await fetch(`/api/purchases/${id}${paymentId ? `?payment_id=${encodeURIComponent(paymentId)}` : ""}`, { cache: "no-store" });
+        if (r.status === 404) { if (!stop) setMissing(true); return; }
+        if (r.ok) { const j = await r.json(); if (!stop) setP(j); if (j.status !== "pending" && !(j.status === "expired" && paymentId)) return; }
+      } catch {}
+      if (!stop) { setTries((t) => { if (t >= 240) { setMissing(true); return t; } setTimeout(tick, 2500); return t + 1; }); } // give up after ~10 min
     };
     tick();
     return () => { stop = true; };
@@ -31,7 +35,13 @@ function Thanks() {
   return (
     <main className="flex-1 flex items-center justify-center p-4">
       <div className="paper rounded-2xl ink-border p-7 max-w-md w-full text-center space-y-4">
-        {!id ? <p>Missing purchase id.</p> : !p ? <p className="font-accent text-xl">checking…</p> : outbid ? (
+        {!id || missing ? (
+          <>
+            <h1 className="font-display text-2xl text-indigo">{!id ? "No purchase in this link." : "We can't find that purchase."}</h1>
+            <p className="text-ink/80 text-sm">If you paid and landed here, email shrithanofficial@gmail.com with the email you used and we&apos;ll find it.</p>
+            <a href="/" className="inline-block font-display bg-marigold text-ink px-5 py-2 rounded-lg ink-border-soft">Back to the auto</a>
+          </>
+        ) : !p ? <p className="font-accent text-xl">checking…</p> : outbid ? (
           <>
             <div className="sticker inline-block bg-indigo text-cream px-4 py-1 rounded text-xl">taken over</div>
             <h1 className="font-display text-3xl text-indigo">{p.sponsorName}</h1>

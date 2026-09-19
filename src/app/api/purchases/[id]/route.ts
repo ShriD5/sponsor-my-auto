@@ -14,6 +14,7 @@ export const maxDuration = 30;
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   const paymentId = req.nextUrl.searchParams.get("payment_id");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: "not found" }, { status: 404 }); // Postgres would 500 on a non-uuid
   let [p] = await db.select().from(schema.purchases).where(eq(schema.purchases.id, id));
   if (!p) return NextResponse.json({ error: "not found" }, { status: 404 });
 

@@ -133,9 +133,10 @@ export function Board({ initial }: { initial: State }) {
             <div key={l} className="paper rounded-xl ink-border-soft px-4 py-3"><div className="font-display text-3xl text-indigo leading-none">{n}</div><div className="font-accent text-ink/60 mt-1">{l}</div></div>
           ))}
         </div>
-        <div className="mt-8 grid gap-3">
+        {/* grid-cols-1 matters: an implicit `auto` column would size to the max-content of the truncated line and overflow phones */}
+        <div className="mt-8 grid grid-cols-1 gap-3">
           {state.slots.map((s, i) => (
-            <div key={s.id} className="paper rounded-xl ink-border-soft px-5 py-4 flex items-center gap-4 tilt" style={{ ["--r" as string]: `${i % 2 ? 0.6 : -0.6}deg` }}>
+            <div key={s.id} className="paper rounded-xl ink-border-soft px-5 py-4 flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 tilt" style={{ ["--r" as string]: `${i % 2 ? 0.6 : -0.6}deg` }}>
               <div className="h-14 w-14 shrink-0 rounded-lg bg-white ink-border-soft flex items-center justify-center overflow-hidden">
                 {s.sponsor ? <img src={s.sponsor.logo} alt="" className="h-full w-full object-contain" /> : <span className="font-accent text-ink/40 text-xs">open</span>}
               </div>
@@ -146,7 +147,7 @@ export function Board({ initial }: { initial: State }) {
                 </div>
               </div>
               <button disabled={closed} onClick={() => pick(s)}
-                className="font-display text-xl bg-marigold text-ink px-5 py-2.5 rounded-lg ink-border-soft hover:bg-pink hover:text-cream transition disabled:opacity-60 whitespace-nowrap">
+                className="w-full sm:w-auto font-display text-xl bg-marigold text-ink px-5 py-2.5 rounded-lg ink-border-soft hover:bg-pink hover:text-cream transition disabled:opacity-60 whitespace-nowrap">
                 Take it · {fmtUsd(s.nextPriceCents)}
               </button>
             </div>

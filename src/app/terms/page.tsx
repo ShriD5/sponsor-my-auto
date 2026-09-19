@@ -14,7 +14,7 @@ export default function Page() {
       <h2>Your responsibility</h2>
       <p>You confirm you have the right to use the logo and link you submit and that they represent a real brand or project. Claims arising from your submission are yours. See the <a className="underline" href="/content-policy">content policy</a>. We may decline, hide, or replace any logo at our sole discretion, before or after printing, if it breaks that policy or the law.</p>
       <h2>Payment</h2>
-      <p>Prices are in USD and may change until you buy. Payments are processed by Dodo Payments, who act as merchant of record: the charge and any refund appear on your statement under Dodo Payments, and they issue the receipt at checkout and an invoice on request.</p>
+      <p>Prices are in USD, exclude taxes, and may change until you buy. Where your country requires it (for example 18% GST in India), Dodo adds the tax at checkout and remits it. Refunds return the tax too. Payments are processed by Dodo Payments, who act as merchant of record: the charge and any refund appear on your statement under Dodo Payments, and they issue the receipt at checkout and an invoice on request.</p>
       <h2>Law</h2>
       <p>These terms are governed by the laws of India. Courts in Bengaluru, Karnataka have exclusive jurisdiction. We may update these terms; the version on the site when you buy is the one that applies to your slot.</p>
       <h2>Contact</h2>

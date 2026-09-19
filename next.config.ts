@@ -21,7 +21,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  async headers() { return [{ source: "/(.*)", headers: securityHeaders }]; },
+  async headers() {
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      // 2.4MB model: cache it for a year (rename the file if it ever changes)
+      { source: "/models/(.*)", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+    ];
+  },
   // the OG image reads the display font from disk at request time; make sure it ships with that function
   outputFileTracingIncludes: { "/opengraph-image": ["./assets/**"] },
 };

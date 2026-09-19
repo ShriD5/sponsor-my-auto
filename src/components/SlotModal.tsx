@@ -89,6 +89,7 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setErr(null);
+    try { const u = new URL(url.startsWith("http") ? url : `https://${url}`); if (!/\./.test(u.hostname)) throw 0; } catch { return setErr("That link doesn't look right. Try yoursite.com."); }
     if (!logo) return setErr("Add a logo first.");
     setBusy(true);
     try {
@@ -146,7 +147,7 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
             {busy ? "opening checkout…" : `Pay ${fmtUsd(slot.nextPriceCents)} →`}
           </button>
         </div>
-        <p className="text-xs text-ink/60 text-center">No account. Pay and your logo is on the auto instantly. If someone takes your slot for double, you&apos;re refunded in full, automatically. If the campaign is called off before the wrap, everyone is refunded in full. <a className="underline" href="/refund-policy" target="_blank">Refund policy</a></p>
+        <p className="text-xs text-ink/60 text-center">Prices in USD; sales tax / GST is added at checkout where your country requires it. No account. Pay and your logo is on the auto instantly. If someone takes your slot for double, you&apos;re refunded in full, automatically. If the campaign is called off before the wrap, everyone is refunded in full. <a className="underline" href="/refund-policy" target="_blank">Refund policy</a></p>
       </form>
     </div>
   );
