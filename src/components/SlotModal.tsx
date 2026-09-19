@@ -1,9 +1,33 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
+import { drawSticker, SLOT_ASPECT } from "./sticker";
 
 const MAX_BYTES = 380_000;
+
+/** Exactly what the 3D auto (and the printer) will show for this logo in this slot's shape. */
+function StickerPreview({ slot, name, logo }: { slot: SlotState; name: string; logo: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const aspect = SLOT_ASPECT[slot.id] ?? 1.6;
+  useEffect(() => {
+    let dead = false;
+    const t = setTimeout(async () => {
+      const preview: SlotState = { ...slot, currentPriceCents: slot.nextPriceCents, nextPriceCents: slot.nextPriceCents * 2, sponsor: { name: name.trim() || "YOUR BRAND", url: "", logo, amountCents: slot.nextPriceCents, since: "" } };
+      const c = await drawSticker(preview, aspect);
+      const el = ref.current; if (dead || !el) return;
+      el.width = c.width; el.height = c.height;
+      el.getContext("2d")!.drawImage(c, 0, 0);
+    }, 150);
+    return () => { dead = true; clearTimeout(t); };
+  }, [slot, name, logo, aspect]);
+  return (
+    <div>
+      <div className="font-accent text-sm text-ink/70 mb-1">how it&apos;ll look on <b>{slot.name.toLowerCase()}</b> · panel is {aspect > 3 ? "a thin strip" : aspect > 1.3 ? "landscape" : "nearly square"}</div>
+      <canvas ref={ref} className="w-full rounded-md" style={{ aspectRatio: String(aspect) }} />
+    </div>
+  );
+}
 
 async function fileToDataUrl(file: File): Promise<string> {
   if (/heic|heif/i.test(file.type) || /\.hei[cf]$/i.test(file.name)) throw new Error("iPhone HEIC photos aren't supported. Export as PNG or JPG.");
@@ -85,7 +109,7 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
 
         <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-4 items-start">
           <button type="button" onClick={() => fileRef.current?.click()}
-            className="aspect-square rounded-xl bg-white ink-border-soft flex items-center justify-center overflow-hidden hover:bg-paper">
+            className={`aspect-square rounded-xl ink-border-soft flex items-center justify-center overflow-hidden ${logo ? "checker" : "bg-white hover:bg-paper"}`}>
             {logo ? <img src={logo} alt="logo preview" className="w-full h-full object-contain p-2" /> : <span className="font-accent text-indigo text-center text-sm px-2">+ upload<br />logo</span>}
           </button>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" className="hidden"
@@ -99,6 +123,8 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
               className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper text-sm" />
           </div>
         </div>
+
+        {logo && slot.autoId === "a1" && <StickerPreview slot={slot} name={name} logo={logo} />}
 
         {err && <div className="bg-pink text-cream font-accent px-3 py-2 rounded-lg">{err}</div>}
 

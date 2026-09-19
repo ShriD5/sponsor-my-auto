@@ -4,81 +4,9 @@ import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Decal, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { SlotState } from "@/lib/state";
-import { fmtUsd } from "@/lib/slots";
+import { drawSticker } from "./sticker";
 
-const INK = "#0f1133", CREAM = "#faf3e0", PINK = "#e63e8b";
-
-/* ------------------------------------------------------------------ */
-/* Sticker textures: everything the buyer needs to know is ON the auto  */
-/* ------------------------------------------------------------------ */
-
-function cssFont(v: string, fallback: string) {
-  if (typeof window === "undefined") return fallback;
-  const f = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-  return f ? `${f}, ${fallback}` : fallback;
-}
-
-async function drawSticker(slot: SlotState, aspect: number): Promise<HTMLCanvasElement> {
-  const W = 1024, H = Math.max(96, Math.round(W / aspect));
-  const c = document.createElement("canvas"); c.width = W; c.height = H;
-  const g = c.getContext("2d")!;
-  const display = cssFont("--font-titan", "Impact, sans-serif");
-  const accent = cssFont("--font-kalam", "cursive");
-  try { await document.fonts.ready; } catch {}
-  const thin = aspect > 3;
-  const pad = Math.round(H * 0.06);
-
-  // base + ink border
-  g.fillStyle = INK; g.fillRect(0, 0, W, H);
-  g.fillStyle = slot.sponsor ? "#ffffff" : CREAM; g.fillRect(pad, pad, W - pad * 2, H - pad * 2);
-
-  if (slot.sponsor) {
-    const img = new Image();
-    await new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res(); img.src = slot.sponsor!.logo; });
-    const footer = thin ? 0 : Math.round(H * 0.16);
-    const box = { x: pad * 2, y: pad * 2, w: W - pad * 4, h: H - pad * 4 - footer };
-    if (img.naturalWidth) {
-      const s = Math.min(box.w / img.naturalWidth, box.h / img.naturalHeight);
-      const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
-      g.drawImage(img, box.x + (box.w - dw) / 2, box.y + (box.h - dh) / 2, dw, dh);
-    }
-    if (footer) {
-      g.fillStyle = INK; g.fillRect(pad, H - pad - footer, W - pad * 2, footer);
-      const y = H - pad - footer / 2, avail = W - pad * 6;
-      const right = `take it for ${fmtUsd(slot.nextPriceCents)} →`;
-      g.font = `${Math.round(footer * 0.44)}px ${accent}`; const rw = g.measureText(right).width;
-      const left = `${slot.sponsor.name.toUpperCase()} · ${fmtUsd(slot.currentPriceCents)}`;
-      g.font = `${Math.round(footer * 0.46)}px ${display}`; const lw = g.measureText(left).width;
-      g.textBaseline = "middle";
-      if (lw + rw + pad * 2 <= avail) {
-        g.fillStyle = CREAM; g.textAlign = "left"; g.fillText(left, pad * 3, y);
-        g.fillStyle = PINK; g.font = `${Math.round(footer * 0.44)}px ${accent}`; g.textAlign = "right"; g.fillText(right, W - pad * 3, y);
-      } else {
-        g.fillStyle = PINK; g.font = `${Math.round(footer * 0.44)}px ${accent}`; g.textAlign = "center"; g.fillText(right, W / 2, y);
-      }
-    }
-    return c;
-  }
-
-  // placeholder: dotted paper
-  g.fillStyle = "rgba(27,31,92,.08)";
-  for (let x = pad + 6; x < W - pad; x += 14) for (let y = pad + 6; y < H - pad; y += 14) { g.beginPath(); g.arc(x, y, 1.6, 0, 7); g.fill(); }
-  g.textAlign = "center"; g.textBaseline = "middle";
-  if (thin) {
-    g.fillStyle = "#1b1f5c"; g.font = `${Math.round(H * 0.58)}px ${display}`;
-    g.fillText(`YOUR LOGO HERE  ·  ${fmtUsd(slot.nextPriceCents)}`, W / 2, H / 2 + H * 0.03);
-  } else {
-    g.fillStyle = PINK; g.font = `${Math.round(H * 0.11)}px ${accent}`;
-    g.fillText(slot.short.toLowerCase(), W / 2, H * 0.2);
-    g.fillStyle = "#1b1f5c"; g.font = `${Math.round(H * 0.24)}px ${display}`;
-    g.fillText("YOUR LOGO", W / 2, H * 0.45);
-    g.fillText("HERE", W / 2, H * 0.66);
-    g.fillStyle = INK; g.fillRect(pad, H - pad - H * 0.16, W - pad * 2, H * 0.16);
-    g.fillStyle = "#f5a524"; g.font = `${Math.round(H * 0.09)}px ${display}`;
-    g.fillText(`${fmtUsd(slot.nextPriceCents)}   ·   tap to take it`, W / 2, H - pad - H * 0.08);
-  }
-  return c;
-}
+/* Sticker textures live in ./sticker.ts (shared with the purchase-modal preview). */
 
 function useStickerTexture(slot: SlotState, aspect: number) {
   const [tex, setTex] = useState<THREE.CanvasTexture | null>(null);
@@ -186,7 +114,8 @@ function GlbRickshaw({ slots, onPick }: { slots: AutoSlotMap; onPick: (s: SlotSt
       visor:    { p: place(obj, v(far, H * 0.935, 0), v(-1, 0, 0), W * 0.70, H * 0.055, 0.12), aspect: (W * 0.70) / (H * 0.055) },
       "side-l": { p: place(obj, v(-L * 0.34, H * 0.755, far), v(0, 0, -1), L * 0.17, H * 0.23, 0.08), aspect: (L * 0.17) / (H * 0.23) },
       "side-r": { p: place(obj, v(-L * 0.34, H * 0.755, -far), v(0, 0, 1), L * 0.17, H * 0.23, 0.08), aspect: (L * 0.17) / (H * 0.23) },
-      top:      { p: place(obj, v(-L * 0.41, far, 0), v(0, -1, 0), W * 0.66, L * 0.055, 0.12, v(1, 0, 0)), aspect: (W * 0.66) / (L * 0.055) },
+      // roofline: aimed from behind-and-above at the rear roof edge so it reads from the traffic behind, above the hood panel
+      top:      (() => { const d = v(1, -0.55, 0).normalize(), t = v(-L * 0.43, H * 0.93, 0); return { p: place(obj, t.clone().sub(d.clone().multiplyScalar(far)), d, W * 0.66, L * 0.055, 0.28, undefined, 0.02), aspect: (W * 0.66) / (L * 0.055) }; })(),
     } as Record<keyof AutoSlotMap, { p: Placement | null; aspect: number }>;
   }, [obj, L, H, W]);
 

@@ -162,8 +162,8 @@ export function Board({ initial }: { initial: State }) {
               ["30 days on the road", "#f5a524", "-2deg"], ["reveal video", "#e63e8b", "1.5deg"], ["daily driver photo", "#0e8c8c", "-1deg"],
               ["GPS heatmap", "#f5a524", "2deg"], ["views report", "#faf3e0", "-1.5deg"], ["logo + link here all month", "#e63e8b", "1deg"],
               ["tagged in every post", "#0e8c8c", "-2deg"], ["first refusal on month 2", "#faf3e0", "1.5deg"], ["the hood, shipped to you", "#f5a524", "-1deg"],
-            ].map(([t, c, r]) => (
-              <span key={t} className="stamp text-lg sm:text-xl floaty" style={{ color: c, ["--r" as string]: r, animationDelay: `${Math.random() * 2}s` }}>{t}</span>
+            ].map(([t, c, r], i) => (
+              <span key={t} className="stamp text-lg sm:text-xl floaty" style={{ color: c, ["--r" as string]: r, animationDelay: `${(i * 0.37) % 2}s` }}>{t}</span>
             ))}
           </div>
         </div>
