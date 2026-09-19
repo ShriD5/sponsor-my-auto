@@ -11,7 +11,7 @@ const Auto3D = dynamic(() => import("./Auto3D").then((m) => m.Auto3D), { ssr: fa
 
 type State = { slots: SlotState[]; raisedCents: number; live: number; visits: number; takeovers: number; saleEndsAt: string | null; wrapDay: string | null; mock: boolean };
 
-const MARQUEE = ["HORN OK PLEASE", "ONE AUTO", "SIX SLOTS", "30 DAYS", "8–12K EYEBALLS A DAY", "NO LOGIN", "TAKE IT FOR 2X", "BENGALURU", "YOUR LOGO HERE"];
+const MARQUEE = ["HORN OK PLEASE", "ONE AUTO", "A.K.A. TUK TUK", "SIX SLOTS", "30 DAYS", "8–12K EYEBALLS A DAY", "NO LOGIN", "TAKE IT FOR 2X", "EVERY DOLLAR BACK", "BENGALURU", "YOUR LOGO HERE"];
 
 export function Board({ initial }: { initial: State }) {
   const [state, setState] = useState(initial);
@@ -47,7 +47,7 @@ export function Board({ initial }: { initial: State }) {
 
         {/* top bar */}
         <div className="relative z-10 flex items-center justify-between px-5 sm:px-8 pt-5 pointer-events-none">
-          <div className="font-accent text-marigold text-xl">ऑटो · ಆಟೋ · auto</div>
+          <div className="font-accent text-marigold text-xl">ऑटो · ಆಟೋ · auto · tuk tuk</div>
           <div className="flex gap-2 pointer-events-auto">
             <div className="paper rounded-lg px-3 py-1.5 ink-border-soft text-sm font-accent"><span className="inline-block w-2 h-2 rounded-full bg-teal mr-1.5 align-middle animate-pulse" /><b className="font-display text-indigo text-base">{state.live}</b> <span className="text-ink/60">here now</span></div>
             <div className="paper rounded-lg px-3 py-1.5 ink-border-soft text-sm font-accent"><span className="text-ink/60">raised</span> <b className="font-display text-indigo text-base">{fmtUsd(state.raisedCents)}</b></div>
@@ -64,7 +64,7 @@ export function Board({ initial }: { initial: State }) {
         </div>
 
         {/* the auto: stacked on mobile, full-bleed behind the type from sm up */}
-        <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[44%] sm:z-0">
+        <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[44%] sm:z-0" role="img" aria-label="Interactive 3D Bengaluru auto-rickshaw (tuk tuk) showing the five sponsor sticker slots">
           <Auto3D slots={autoSlots} onPick={pick} className="w-full h-full" />
         </div>
 
@@ -72,7 +72,7 @@ export function Board({ initial }: { initial: State }) {
         <div className="relative sm:absolute z-10 left-0 right-0 bottom-0 px-5 sm:px-8 pb-7 pt-4 sm:pt-0 flex flex-col sm:flex-row sm:items-end justify-between gap-5 pointer-events-none">
           <div className="rise rise-4 max-w-md">
             <p className="text-cream/90 text-lg leading-snug">
-              One rickshaw, thirty days, ten hours a day in traffic. Five panels on the metal, one on this page.
+              One auto-rickshaw (tuk tuk, three-wheeler, whatever you call it), thirty days, ten hours a day in Bengaluru traffic. Five panels on the metal, one on this page.
               Anyone can take your slot for <b className="text-pink">double</b>. You get every dollar back.
             </p>
             <div className="mt-4 flex flex-wrap gap-3 pointer-events-auto">

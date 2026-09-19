@@ -24,7 +24,7 @@ function Thanks() {
   }, [id, paymentId]);
 
   const live = p && p.status !== "pending" && p.status !== "failed";
-  const share = p ? `https://x.com/intent/tweet?text=${encodeURIComponent(`${p.sponsorName} is on an auto rickshaw in Bengaluru for a month 🛺 (${p.slotName}). Want it? Take it from us for double → ${process.env.NEXT_PUBLIC_APP_URL || ""}`)}` : "#";
+  const share = p ? `https://x.com/intent/tweet?text=${encodeURIComponent(`${p.sponsorName} is on a Bengaluru tuk tuk for a month 🛺 (${p.slotName}). Want it? Take it from us for double → ${process.env.NEXT_PUBLIC_APP_URL || ""}`)}` : "#";
 
   return (
     <main className="flex-1 flex items-center justify-center p-4">

@@ -29,3 +29,42 @@ One auto rickshaw, 30 days, 6 slots: The Hood ($3,500), Left Side ($800), Right 
 3. `./scripts/go-live.sh` (pushes Dodo env to Vercel, sets `MOCK_PAY=0`, redeploys).
 
 Edit `SALE_ENDS_AT`, `WRAP_DAY`, prices/copy in `src/lib/slots.ts`, and the X handle in `src/components/Board.tsx` footer. Slot price/name edits sync to the DB automatically for unsold slots.
+
+## Launch thread (draft)
+
+Brand stays "Sponsor My Auto" (genre convention: Sponsor My Body / dress / tuxedo). "Tuk tuk" is used once, early, for non-Indian readers. Lead with Bengaluru, not the vehicle.
+
+**1 / hook** (attach: screen recording of the 3D auto spinning, then cut to a real photo of the actual auto if you have it)
+> I'm selling a tuk tuk.
+> For 30 days, a Bengaluru auto-rickshaw drives around the city with your startup's logo on it.
+> 6 slots. Anyone can take yours by paying double — and you get every dollar back, not "minus fees".
+> Daily driver photo · GPS heatmap · reveal video
+> → sponsor-my-auto.vercel.app
+
+**2 / why an auto** (attach: photo of a Bengaluru auto in traffic, ideally the one you're wrapping)
+> Why an auto and not my body?
+> Marc's tattoos lasted one race. A dress lasts one conference.
+> This thing is in traffic 10 hours a day for a month, in the city with the densest founder population in India. 8–12k eyeballs a day, and the sponsor gets the GPS trace to prove it.
+
+**3 / precedent** (attach: quote-tweet or embed Carl Pei's Nothing auto arrival, Feb 2026, and Wispr Flow's 100-auto wrap, Apr 2026. Don't re-upload their photos; quote the original posts so the credit and the engagement stay attached. Sources: marketingmonk.so/p/auto-rickshaw-campaign-by-nothing, blog.wrap2earn.com, media4growth.com Wispr Flow campaign.)
+> Bengaluru autos already work for tech brands.
+> Feb: Carl Pei arrived at Nothing's first India store in a branded auto. Zero ad spend, 2,000-person queue, videos everywhere.
+> Apr: Wispr Flow (SF) wrapped 100 autos for its India launch.
+> Those cost lakhs and an agency. This one costs you one slot and 60 seconds.
+
+**4 / the mechanic** (attach: screenshot of the rate board with a takeover)
+> Rules:
+> · tap a panel, pay, upload a logo. no account.
+> · anyone can take your panel for 2× what you paid
+> · you're refunded in full, instantly, automatically
+> · take it back at 2× again if you're petty
+> Sale closes {SALE_ENDS_AT}. Wrap day {WRAP_DAY}.
+
+**5 / the slots** (attach: 6 close-ups from the 3D model, `?cam=front`, `?cam=side`, `?cam=side2`, `?cam=top`)
+> The hood is the big one. Left and right sides face the traffic. Visor faces the passenger. Roofline is the cheap seat. "The Page" is the banner on the site.
+
+**6 / CTA**
+> The hood is open at $3,500 right now. Someone will double it. Might as well be you first.
+> → sponsor-my-auto.vercel.app
+
+Reveal-day follow-up: real wrapped auto, driver, first ride video. Tag every sponsor.
