@@ -157,9 +157,9 @@ function Turntable({ children, speed = 0.15 }: { children: React.ReactNode; spee
   return <group ref={ref}>{children}</group>;
 }
 
-export function Auto3D({ slots, onPick, className }: { slots: AutoSlotMap; onPick: (s: SlotState) => void; className?: string }) {
+export function Auto3D({ slots, onPick, className, film }: { slots: AutoSlotMap; onPick: (s: SlotState) => void; className?: string; film?: boolean }) {
   const dbg = debugCam();
-  const base: [number, number, number] = dbg ?? [-4.0, 1.55, 2.35];
+  const base: [number, number, number] = dbg ?? (film ? [-3.5, 1.35, 2.05] : [-4.0, 1.55, 2.35]);
   return (
     <div className={className ?? "w-full h-[400px] sm:h-[520px]"}>
       <Canvas shadows dpr={[1, 1.75]} camera={{ position: base, fov: 36 }} gl={{ antialias: true, alpha: true }}>
@@ -169,7 +169,7 @@ export function Auto3D({ slots, onPick, className }: { slots: AutoSlotMap; onPic
         <directionalLight position={[4, 7, 3]} intensity={1.4} castShadow />
         <directionalLight position={[-5, 3, -3]} intensity={0.9} color="#e63e8b" />
         <pointLight position={[-3, 1.5, 2]} intensity={6} color="#f5a524" distance={9} />
-        <Turntable speed={0.18}>
+        <Turntable speed={film ? (2 * Math.PI) / 5 : 0.18}>
           <Boundary>
             <Suspense fallback={null}>
               <GlbRickshaw slots={slots} onPick={onPick} />

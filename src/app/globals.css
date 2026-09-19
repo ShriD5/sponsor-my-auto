@@ -72,6 +72,10 @@ body { font-family: var(--font-body); }
 @keyframes rise { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: none } }
 .rise { animation: rise .7s cubic-bezier(.2,.8,.2,1) both; }
 .rise-1 { animation-delay: .08s } .rise-2 { animation-delay: .18s } .rise-3 { animation-delay: .3s } .rise-4 { animation-delay: .45s }
+@media (prefers-reduced-motion: reduce) {
+  .marquee > div, .floaty, .hover-wobble:hover, .flip-in { animation: none; }
+  .rise { animation-duration: .01s; animation-delay: 0s; }
+}
 .glow { background: radial-gradient(55% 55% at 70% 50%, rgba(245,165,36,.35), rgba(230,62,139,.12) 45%, transparent 70%); }
 .grain::after {
   content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .07; mix-blend-mode: overlay;

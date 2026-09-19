@@ -6,20 +6,29 @@ const titan = Titan_One({ weight: "400", subsets: ["latin"], variable: "--font-t
 const kalam = Kalam({ weight: ["400", "700"], subsets: ["latin", "devanagari"], variable: "--font-kalam" });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
-const url = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const url = process.env.NEXT_PUBLIC_APP_URL || "https://sponsormyauto.lol";
 
 export const metadata: Metadata = {
   metadataBase: new URL(url),
-  title: "Sponsor My Auto — your logo on a Bengaluru auto-rickshaw (tuk tuk) for 30 days",
+  title: "Sponsor My Auto — your logo on a Bengaluru tuk tuk for 30 days",
   description:
     "One auto-rickshaw (tuk tuk), 30 days in Bengaluru traffic. Six slots, no account needed. Anyone can take your slot by paying double and you get every dollar back.",
   keywords: ["tuk tuk", "auto rickshaw", "Bengaluru", "startup sponsorship", "sponsor my", "logo placement", "Bangalore"],
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Sponsor My Auto — a Bengaluru tuk tuk, your logo, 30 days",
     description: "One auto-rickshaw. One month. Your logo on the hood. Anyone can take it for double; you get every dollar back.",
     type: "website",
+    url: "/",
+    siteName: "Sponsor My Auto",
   },
-  twitter: { card: "summary_large_image", title: "Sponsor My Auto — a Bengaluru tuk tuk, your logo, 30 days", description: "One auto-rickshaw. One month. Your logo on the hood. Anyone can take it for double." },
+  twitter: {
+    card: "summary_large_image",
+    site: "@DevaiahShrithan",
+    creator: "@DevaiahShrithan",
+    title: "Sponsor My Auto — a Bengaluru tuk tuk, your logo, 30 days",
+    description: "One auto-rickshaw. One month. Your logo on the hood. Anyone can take it for double; you get every dollar back.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -29,6 +29,6 @@ export async function emailOutbid(prev: { email: string | null; sponsorName: str
   if (!prev.email) return;
   await send(prev.email, `Someone took ${slotName} from you`, wrap(`
     <p>Hi ${prev.sponsorName}, <b>${slotName}</b> was just taken for <b>${fmtUsd(newAmountCents)}</b>.</p>
-    <p>Your <b>${fmtUsd(prev.amountCents)}</b> is being refunded in full to your original payment method. It's initiated automatically and usually lands within 3–7 business days depending on your bank. Reply to this email if it hasn't.</p>
+    <p>Your <b>${fmtUsd(prev.amountCents)}</b> is being refunded in full to your original payment method. It's initiated automatically and usually lands within 3–7 business days depending on your bank. Reply to this email if it hasn't arrived by then.</p>
     <p>Want it back? Take it for <b>${fmtUsd(newAmountCents * 2)}</b>: <a href="${origin()}">${origin()}</a></p>`));
 }

@@ -1,6 +1,6 @@
 # Sponsor My Auto
 
-One auto rickshaw, 30 days, 6 slots: The Hood ($3,500), Left Side ($800), Right Side ($800), The Visor ($750), The Roofline ($500), The Page ($500). No login: pay → upload logo → live instantly. Any slot can be taken over for 2x; the previous sponsor is auto-refunded. No back panel (not permitted on autos locally).
+One auto-rickshaw, 30 days, 6 slots: The Hood ($3,500), Left Side ($800), Right Side ($800), The Visor ($750), The Roofline ($500), The Page ($500). No login: pay → upload logo → live instantly. Any slot can be taken over for 2x; the previous sponsor is auto-refunded. No back panel (not permitted on autos locally).
 
 - Prod: https://sponsormyauto.lol
 - Stack: Next.js 16, Neon Postgres (drizzle), Dodo Payments (pay-what-you-want product + per-checkout amount), Vercel.
@@ -56,12 +56,12 @@ Brand stays "Sponsor My Auto" (genre convention: Sponsor My Body / dress / tuxed
 > Rules:
 > · tap a panel, pay, upload a logo. no account.
 > · anyone can take your panel for 2× what you paid
-> · you're refunded in full, instantly, automatically
+> · you're refunded in full, automatically (lands in 3–7 business days)
 > · take it back at 2× again if you're petty
-> Sale closes {SALE_ENDS_AT}. Wrap day {WRAP_DAY}.
+> Sale closes 29 Sep, 11:15 PM IST. Wrap day 30 Sep.
 
 **5 / the slots** (attach: 6 close-ups from the 3D model, `?cam=front`, `?cam=side`, `?cam=side2`, `?cam=top`)
-> The hood is the big one. Left and right sides face the traffic. Visor faces the passenger. Roofline is the cheap seat. "The Page" is the banner on the site.
+> The hood is the big one. Left and right sides face the traffic. Visor faces oncoming traffic. Roofline is the cheap seat. "The Page" is the banner on the site.
 
 **6 / CTA**
 > The hood is open at $3,500 right now. Someone will double it. Might as well be you first.

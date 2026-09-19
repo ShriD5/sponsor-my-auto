@@ -64,7 +64,7 @@ export function Board({ initial }: { initial: State }) {
         </div>
 
         {/* the auto: stacked on mobile, full-bleed behind the type from sm up */}
-        <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[30%] sm:z-0" role="img" aria-label="Interactive 3D Bengaluru auto-rickshaw (tuk tuk) showing the five sponsor sticker slots">
+        <div className="relative h-[46svh] mt-2 sm:mt-0 sm:absolute sm:inset-0 sm:h-auto lg:left-[30%] sm:z-0" role="img" aria-label="Interactive 3D Bengaluru auto-rickshaw (tuk tuk) showing the five sponsor sticker slots. Use the slot list below to buy a slot with a keyboard.">
           <Auto3D slots={autoSlots} onPick={pick} className="w-full h-full" />
         </div>
 
@@ -78,21 +78,22 @@ export function Board({ initial }: { initial: State }) {
             <div className="mt-4 flex flex-wrap gap-3 pointer-events-auto">
               <button onClick={() => pick(hood)} disabled={closed}
                 className="font-display text-xl bg-marigold text-ink px-6 py-3 rounded-lg ink-border-soft hover:bg-pink hover:text-cream transition disabled:opacity-60">
-                {hood.sponsor ? `Take the hood · ${fmtUsd(hood.nextPriceCents)}` : `Take the hood · ${fmtUsd(hood.nextPriceCents)}`}
+                Take the hood · {fmtUsd(hood.nextPriceCents)}
               </button>
               <a href="#slots" className="font-accent text-xl text-cream px-4 py-3 underline decoration-marigold decoration-2 underline-offset-4">all slots ↓</a>
             </div>
           </div>
           <div className="rise rise-4 pointer-events-auto">
-            <div className="font-accent text-cream/70 text-right sm:text-right">{closed ? "sale closed" : "closes in"}</div>
-            <Countdown endsAt={state.saleEndsAt} />
+            <div className="font-accent text-cream/70 text-right">{closed ? "sale closed" : "closes in"}</div>
+            {state.saleEndsAt && <span className="sr-only">Sale closes {new Date(state.saleEndsAt).toUTCString()}</span>}
+            <div aria-hidden="true"><Countdown endsAt={state.saleEndsAt} /></div>
           </div>
         </div>
         <div className="absolute z-10 top-6 right-8 hidden lg:block font-accent text-cream/60 text-sm pointer-events-none mt-12">← drag to spin · tap any sticker to take it</div>
       </section>
 
       {/* marquee */}
-      <div className="marquee bg-marigold text-ink border-y-4 border-ink py-3 font-display text-xl sm:text-2xl">
+      <div className="marquee bg-marigold text-ink border-y-4 border-ink py-3 font-display text-xl sm:text-2xl" aria-hidden="true">
         <div>{[...MARQUEE, ...MARQUEE].map((t, i) => <span key={i} className="px-6">{t} <span className="text-pink">★</span></span>)}</div>
       </div>
 
@@ -146,7 +147,7 @@ export function Board({ initial }: { initial: State }) {
               </div>
               <button disabled={closed} onClick={() => pick(s)}
                 className="font-display text-xl bg-marigold text-ink px-5 py-2.5 rounded-lg ink-border-soft hover:bg-pink hover:text-cream transition disabled:opacity-60 whitespace-nowrap">
-                {s.sponsor ? "Take it" : "Take it"} · {fmtUsd(s.nextPriceCents)}
+                Take it · {fmtUsd(s.nextPriceCents)}
               </button>
             </div>
           ))}
@@ -161,7 +162,7 @@ export function Board({ initial }: { initial: State }) {
             {[
               ["30 days on the road", "#f5a524", "-2deg"], ["reveal video", "#e63e8b", "1.5deg"], ["daily driver photo", "#0e8c8c", "-1deg"],
               ["GPS heatmap", "#f5a524", "2deg"], ["views report", "#faf3e0", "-1.5deg"], ["logo + link here all month", "#e63e8b", "1deg"],
-              ["tagged in every post", "#0e8c8c", "-2deg"], ["first refusal on month 2", "#faf3e0", "1.5deg"], ["the hood, shipped to you", "#f5a524", "-1deg"],
+              ["tagged in every post", "#0e8c8c", "-2deg"], ["first refusal on month 2", "#faf3e0", "1.5deg"], ["hood sponsor: the panel, shipped to you", "#f5a524", "-1deg"],
             ].map(([t, c, r], i) => (
               <span key={t} className="stamp text-lg sm:text-xl floaty" style={{ color: c, ["--r" as string]: r, animationDelay: `${(i * 0.37) % 2}s` }}>{t}</span>
             ))}
@@ -181,7 +182,7 @@ export function Board({ initial }: { initial: State }) {
             ["Auto's off the road a day?", "That day gets added to the end. You get your 30."],
           ].map(([q, a]) => (
             <details key={q} className="paper rounded-xl ink-border-soft p-4 group tilt" style={{ ["--r" as string]: "0deg" }}>
-              <summary className="font-display text-lg text-indigo cursor-pointer list-none flex justify-between gap-4">{q}<span className="text-pink group-open:rotate-45 transition">+</span></summary>
+              <summary className="font-display text-lg text-indigo cursor-pointer list-none flex justify-between gap-4">{q}<span className="text-pink group-open:rotate-45 transition" aria-hidden="true">+</span></summary>
               <p className="mt-2 text-ink/80">{a}</p>
             </details>
           ))}

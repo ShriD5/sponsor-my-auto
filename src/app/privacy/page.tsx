@@ -8,7 +8,7 @@ export default function Page() {
       <h2>What we do with it</h2>
       <p>Show your logo and link on the site and the auto, email you about your slot, refunds, and wrap day. Nothing is sold or shared beyond the payment processor.</p>
       <h2>Removal</h2>
-      <p>Email us to delete your data after the campaign ends.</p>
+      <p>Email shrithanofficial@gmail.com to delete your data after the campaign ends.</p>
     </Legal>
   );
 }

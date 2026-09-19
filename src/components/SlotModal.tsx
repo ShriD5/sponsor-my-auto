@@ -73,7 +73,19 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
   const takeover = !!slot.sponsor;
+
+  // Escape closes, first field gets focus, page behind doesn't scroll, focus goes back where it came from
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    nameRef.current?.focus();
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = overflow; prev?.focus?.(); };
+  }, [onClose]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setErr(null);
@@ -90,12 +102,12 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/80 p-3" onClick={onClose}>
-      <form onClick={(e) => e.stopPropagation()} onSubmit={submit}
+      <form onClick={(e) => e.stopPropagation()} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="slot-title"
         className="paper w-full max-w-lg rounded-2xl ink-border p-5 sm:p-7 space-y-4 max-h-[92vh] overflow-y-auto">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="font-accent text-pink text-lg leading-none">{takeover ? "take over" : "buy now"}</div>
-            <h3 className="font-display text-2xl sm:text-3xl text-indigo">{slot.name}</h3>
+            <h3 id="slot-title" className="font-display text-2xl sm:text-3xl text-indigo">{slot.name}</h3>
           </div>
           <div className="text-right">
             <div className="font-display text-3xl text-indigo">{fmtUsd(slot.nextPriceCents)}</div>
@@ -108,33 +120,33 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
         </ul>
 
         <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-4 items-start">
-          <button type="button" onClick={() => fileRef.current?.click()}
-            className={`aspect-square rounded-xl ink-border-soft flex items-center justify-center overflow-hidden ${logo ? "checker" : "bg-white hover:bg-paper"}`}>
+          <button type="button" onClick={() => fileRef.current?.click()} aria-label={logo ? "Change logo" : "Upload logo"}
+            className={`aspect-square rounded-xl ink-border-soft flex items-center justify-center overflow-hidden focus-visible:ring-2 focus-visible:ring-pink ${logo ? "checker" : "bg-white hover:bg-paper"}`}>
             {logo ? <img src={logo} alt="logo preview" className="w-full h-full object-contain p-2" /> : <span className="font-accent text-indigo text-center text-sm px-2">+ upload<br />logo</span>}
           </button>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" className="hidden"
             onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { setLogo(await fileToDataUrl(f)); setErr(null); } catch (er) { setErr((er as Error).message); } }} />
           <div className="space-y-3">
-            <input required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} placeholder="Brand / your name"
-              className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper" />
-            <input required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="yoursite.com"
-              className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper" />
-            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email, for your refund if someone takes your slot"
-              className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper text-sm" />
+            <input ref={nameRef} required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} placeholder="Brand / your name" aria-label="Brand or your name"
+              className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper focus-visible:ring-2 focus-visible:ring-pink" />
+            <input required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="yoursite.com" aria-label="Website URL" inputMode="url" autoComplete="url"
+              className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper focus-visible:ring-2 focus-visible:ring-pink" />
+            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email, for your refund if someone takes your slot" aria-label="Email, for your refund if someone takes your slot" autoComplete="email"
+              className="w-full rounded-lg bg-white px-3 py-2 ink-border-soft outline-none focus:bg-paper focus-visible:ring-2 focus-visible:ring-pink text-sm" />
           </div>
         </div>
 
         {logo && slot.autoId === "a1" && <StickerPreview slot={slot} name={name} logo={logo} />}
 
-        {err && <div className="bg-pink text-cream font-accent px-3 py-2 rounded-lg">{err}</div>}
+        {err && <div role="alert" className="bg-pink text-cream font-accent px-3 py-2 rounded-lg">{err}</div>}
 
         <div className="flex gap-3 pt-1">
-          <button type="button" onClick={onClose} className="font-accent text-lg px-4 py-2 rounded-lg text-ink/70 hover:bg-paper">cancel</button>
-          <button disabled={busy} className="flex-1 font-display text-xl bg-marigold text-ink rounded-lg py-3 ink-border-soft hover:bg-pink hover:text-cream disabled:opacity-60 transition">
+          <button type="button" onClick={onClose} className="font-accent text-lg px-4 py-2 rounded-lg text-ink/70 hover:bg-paper focus-visible:ring-2 focus-visible:ring-pink">cancel</button>
+          <button disabled={busy} aria-busy={busy} className="flex-1 font-display text-xl bg-marigold text-ink rounded-lg py-3 ink-border-soft hover:bg-pink hover:text-cream disabled:opacity-60 transition focus-visible:ring-2 focus-visible:ring-pink">
             {busy ? "opening checkout…" : `Pay ${fmtUsd(slot.nextPriceCents)} →`}
           </button>
         </div>
-        <p className="text-xs text-ink/60 text-center">No account. Pay and your logo is on the auto instantly. If someone takes your slot for double, you&apos;re refunded automatically. If the auto doesn&apos;t roll on wrap day, everyone is refunded. <a className="underline" href="/refund-policy" target="_blank">Refund policy</a></p>
+        <p className="text-xs text-ink/60 text-center">No account. Pay and your logo is on the auto instantly. If someone takes your slot for double, you&apos;re refunded in full, automatically. If the campaign is called off before the wrap, everyone is refunded in full. <a className="underline" href="/refund-policy" target="_blank">Refund policy</a></p>
       </form>
     </div>
   );
