@@ -22,7 +22,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   async headers() { return [{ source: "/(.*)", headers: securityHeaders }]; },
-  /* config options here */
+  // the OG image reads the display font from disk at request time; make sure it ships with that function
+  outputFileTracingIncludes: { "/opengraph-image": ["./assets/**"] },
 };
 
 export default nextConfig;

@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 // satori only knows the fonts we hand it; Titan One is the display face used on the site
 const titan = readFile(join(process.cwd(), "assets/TitanOne.ttf"));
+const origin = process.env.NEXT_PUBLIC_APP_URL || "https://sponsormyauto.lol"; // sponsor logos are same-origin URLs; satori needs them absolute
 
 export default async function OG() {
   const [s, font] = await Promise.all([getState(), titan]);
@@ -40,7 +41,7 @@ export default async function OG() {
             ? <>{card("the hood", `${hood ? fmtUsd(hood.nextPriceCents) : "$3,500"} · open`, "#faf3e0", "#1b1f5c")}{card("30 days · 6 slots", "take any for 2x", "#e63e8b", "#faf3e0")}</>
             : <>{card("raised", fmtUsd(s.raisedCents), "#faf3e0", "#1b1f5c")}{card("slots taken", `${taken.length}/${s.slots.length}`, "#e63e8b", "#faf3e0")}</>}
           <div style={{ display: "flex", gap: 12, marginLeft: "auto" }}>
-            {taken.slice(0, 5).map((t) => <img key={t.id} src={t.sponsor!.logo} width={88} height={88} style={{ display: "flex", background: "#fff", borderRadius: 12, objectFit: "contain" }} />)}
+            {taken.slice(0, 5).map((t) => <img key={t.id} src={`${origin}${t.sponsor!.logo}`} width={88} height={88} style={{ display: "flex", background: "#fff", borderRadius: 12, objectFit: "contain" }} />)}
           </div>
         </div>
       </div>

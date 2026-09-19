@@ -16,20 +16,35 @@ function Thanks() {
     let stop = false;
     const tick = async () => {
       const r = await fetch(`/api/purchases/${id}${paymentId ? `?payment_id=${encodeURIComponent(paymentId)}` : ""}`, { cache: "no-store" });
-      if (r.ok) { const j = await r.json(); if (!stop) setP(j); if (j.status !== "pending") return; }
+      if (r.ok) { const j = await r.json(); if (!stop) setP(j); if (j.status !== "pending" && !(j.status === "expired" && paymentId)) return; }
       if (!stop) { setTries((t) => t + 1); setTimeout(tick, 2500); }
     };
     tick();
     return () => { stop = true; };
   }, [id, paymentId]);
 
-  const live = p && p.status !== "pending" && p.status !== "failed";
+  const live = p?.status === "paid";
+  const outbid = p?.status === "superseded" || p?.status === "refunded";
+  const dead = p?.status === "failed" || p?.status === "expired";
   const share = p ? `https://x.com/intent/tweet?text=${encodeURIComponent(`${p.sponsorName} is on a Bengaluru tuk tuk for a month 🛺 (${p.slotName}). Want it? Take it from us for double → ${process.env.NEXT_PUBLIC_APP_URL || "https://sponsormyauto.lol"}`)}` : "#";
 
   return (
     <main className="flex-1 flex items-center justify-center p-4">
       <div className="paper rounded-2xl ink-border p-7 max-w-md w-full text-center space-y-4">
-        {!id ? <p>Missing purchase id.</p> : !p ? <p className="font-accent text-xl">checking…</p> : live ? (
+        {!id ? <p>Missing purchase id.</p> : !p ? <p className="font-accent text-xl">checking…</p> : outbid ? (
+          <>
+            <div className="sticker inline-block bg-indigo text-cream px-4 py-1 rounded text-xl">taken over</div>
+            <h1 className="font-display text-3xl text-indigo">{p.sponsorName}</h1>
+            <p className="text-ink/80">Someone took <b>{p.slotName}</b> for double. Your <b>{fmtUsd(p.amountCents)}</b> is being refunded in full; it usually lands within 3–7 business days.</p>
+            <a href="/" className="inline-block font-display bg-marigold text-ink px-5 py-2 rounded-lg ink-border-soft">Take it back</a>
+          </>
+        ) : dead ? (
+          <>
+            <h1 className="font-display text-2xl text-indigo">{p.status === "expired" ? "This checkout expired." : "That one didn't go through."}</h1>
+            <p className="text-ink/80 text-sm">{p.status === "expired" ? "Nothing was charged." : "Either the payment failed or the slot's price moved while you were paying. Anything that was charged is refunded in full, automatically."}</p>
+            <a href="/" className="inline-block font-display bg-marigold text-ink px-5 py-2 rounded-lg ink-border-soft">Back to the auto</a>
+          </>
+        ) : live ? (
           <>
             <div className="sticker inline-block bg-pink text-cream px-4 py-1 rounded text-xl">you&apos;re on it</div>
             <img src={p.logo} alt="" className="h-24 mx-auto object-contain" />

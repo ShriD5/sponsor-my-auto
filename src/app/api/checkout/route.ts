@@ -7,6 +7,7 @@ import { settlePaid } from "@/lib/settle";
 import { and, eq, gt, lt, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 const MAX_LOGO = 420_000;
 const MAGIC: Record<string, (b: Buffer) => boolean> = {
   "image/png": (b) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
@@ -38,9 +39,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "sale closed" }, { status: 400 });
   }
 
-  // abuse limits: prune stale pending rows, cap pending checkouts per IP
-  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
-  await db.delete(schema.purchases).where(and(eq(schema.purchases.status, "pending"), lt(schema.purchases.createdAt, new Date(Date.now() - 24 * 3600_000))));
+  // abuse limits: expire stale pending rows (kept, not deleted: a late payment must still find its purchase), cap pending checkouts per IP
+  const ip = req.headers.get("x-real-ip") || (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  await db.update(schema.purchases).set({ status: "expired" }).where(and(eq(schema.purchases.status, "pending"), lt(schema.purchases.createdAt, new Date(Date.now() - 24 * 3600_000))));
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.purchases)
     .where(and(eq(schema.purchases.ip, ip), eq(schema.purchases.status, "pending"), gt(schema.purchases.createdAt, new Date(Date.now() - 10 * 60_000))));
   if (n >= 5) return NextResponse.json({ error: "too many attempts, try again in a few minutes" }, { status: 429 });

@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { retryPendingRefunds } from "@/lib/refunds";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Vercel Cron (see vercel.json) calls this with `Authorization: Bearer $CRON_SECRET`; `x-admin-token` also works for a manual poke. */
 function authed(req: NextRequest) {

@@ -2,7 +2,9 @@ import { eq, inArray, gt, sql, and, or } from "drizzle-orm";
 import { db, schema } from "./db";
 import { SLOT_DEFS, nextPrice } from "./slots";
 
+/** logo is a same-origin URL (/api/logo/:purchaseId), not the image bytes: state is polled every 10s by every open tab. */
 export type SponsorPublic = { name: string; url: string; logo: string; amountCents: number; since: string };
+export const logoUrl = (purchaseId: string) => `/api/logo/${purchaseId}`;
 export type SlotState = {
   id: string; autoId: string; kind: string; name: string; short: string;
   basePriceCents: number; currentPriceCents: number; nextPriceCents: number;
@@ -10,7 +12,10 @@ export type SlotState = {
   tag: string; lines: string[];
 };
 
+let seeded = false;
+/** Sync slot rows with SLOT_DEFS. Runs once per warm function instance; a deploy (new instances) picks up config edits. */
 export async function ensureSeeded() {
+  if (seeded) return;
   const existing = await db.select({ id: schema.slots.id }).from(schema.slots);
   const have = new Set(existing.map((r) => r.id));
   const missing = SLOT_DEFS.filter((s) => !have.has(s.id));
@@ -35,6 +40,7 @@ export async function ensureSeeded() {
         .where(eq(schema.slots.id, r.id));
     }
   }
+  seeded = true;
 }
 
 export async function getState() {
@@ -54,7 +60,7 @@ export async function getState() {
       id: def.id, autoId: def.autoId, kind: def.kind, name: def.name, short: def.short,
       basePriceCents: row.basePriceCents, currentPriceCents: row.currentPriceCents,
       nextPriceCents: nextPrice(row.basePriceCents, row.currentPriceCents, !!p),
-      sponsor: visible ? { name: p.sponsorName, url: p.url, logo: p.logoData, amountCents: p.amountCents, since: (p.paidAt ?? p.createdAt).toISOString() } : null,
+      sponsor: visible ? { name: p.sponsorName, url: p.url, logo: logoUrl(p.id), amountCents: p.amountCents, since: (p.paidAt ?? p.createdAt).toISOString() } : null,
       tag: def.tag, lines: def.lines,
     };
   });
