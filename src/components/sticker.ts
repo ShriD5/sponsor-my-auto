@@ -76,7 +76,8 @@ function drawContain(g: CanvasRenderingContext2D, img: HTMLImageElement, box: { 
 }
 
 export async function drawSticker(slot: SlotState, aspect: number): Promise<HTMLCanvasElement> {
-  const W = 1024, H = Math.max(128, Math.round(W / aspect));
+  // 2048 wide so the hood stays crisp when the camera is close; thin strips get the same width, less height
+  const W = 2048, H = Math.max(192, Math.round(W / aspect));
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
   const display = cssFont("--font-titan", "Impact, sans-serif");
@@ -162,14 +163,17 @@ export async function drawSticker(slot: SlotState, aspect: number): Promise<HTML
     fitFont(g, t, display, Math.round(H * 0.58), W - pad * 6);
     g.fillText(t, W / 2, H / 2 + H * 0.03);
   } else {
-    g.fillStyle = PINK; g.font = `${Math.round(H * 0.11)}px ${accent}`;
+    // every line is fitted to the sticker width: tall panels (sides) are narrower than the text at the nominal size
+    const maxW = W - pad * 6;
+    g.fillStyle = PINK; fitFont(g, slot.short.toLowerCase(), accent, Math.round(H * 0.11), maxW);
     g.fillText(slot.short.toLowerCase(), W / 2, H * 0.2);
-    g.fillStyle = INDIGO; g.font = `${Math.round(H * 0.24)}px ${display}`;
+    g.fillStyle = INDIGO; fitFont(g, "YOUR LOGO", display, Math.round(H * 0.24), maxW);
     g.fillText("YOUR LOGO", W / 2, H * 0.45);
     g.fillText("HERE", W / 2, H * 0.66);
     g.fillStyle = INK; g.fillRect(pad, H - pad - H * 0.16, W - pad * 2, H * 0.16);
-    g.fillStyle = MARIGOLD; g.font = `${Math.round(H * 0.09)}px ${display}`;
-    g.fillText(`${fmtUsd(slot.nextPriceCents)}   ·   tap to take it`, W / 2, H - pad - H * 0.08);
+    const cta = `${fmtUsd(slot.nextPriceCents)}   ·   tap to take it`;
+    g.fillStyle = MARIGOLD; fitFont(g, cta, display, Math.round(H * 0.09), maxW);
+    g.fillText(cta, W / 2, H - pad - H * 0.08);
   }
   return c;
 }

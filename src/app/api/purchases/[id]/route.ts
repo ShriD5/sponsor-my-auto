@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { dodo, isMockPay } from "@/lib/dodo";
-import { settlePaid } from "@/lib/settle";
+import { settlePaid, paidUsdCents } from "@/lib/settle";
 import { slotById } from "@/lib/slots";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     try {
       const pay = await dodo().payments.retrieve(paymentId);
       if (pay.status === "succeeded" && pay.metadata?.purchase_id === id) {
-        await settlePaid(id, paymentId, pay.total_amount);
+        await settlePaid(id, paymentId, paidUsdCents(pay));
         [p] = await db.select().from(schema.purchases).where(eq(schema.purchases.id, id));
       }
     } catch (e) { console.error("verify failed", e); }

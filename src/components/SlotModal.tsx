@@ -46,14 +46,14 @@ async function fileToDataUrl(file: File): Promise<string> {
   try {
     await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error(`Couldn't read "${file.name}". Try a PNG or JPG.`)); img.src = objUrl; });
     let w = img.naturalWidth || 1024, h = img.naturalHeight || 1024;
-    let max = 800;
+    let max = 1400; // hood sticker is 2048px wide; the size loop below shrinks further if the byte cap is hit
     for (let attempt = 0; attempt < 8; attempt++) {
       const scale = Math.min(1, max / Math.max(w, h));
       const c = document.createElement("canvas");
       c.width = Math.max(1, Math.round(w * scale)); c.height = Math.max(1, Math.round(h * scale));
       const g = c.getContext("2d")!; g.drawImage(img, 0, 0, c.width, c.height);
       // WebP where supported (Chrome/Firefox); Safari ignores the type and returns PNG, so we also shrink dimensions
-      let out = c.toDataURL("image/webp", 0.88);
+      let out = c.toDataURL("image/webp", 0.9);
       if (!out.startsWith("data:image/webp")) out = c.toDataURL("image/png");
       if (out.length <= MAX_BYTES) return out;
       // last resort: JPEG (no transparency) before shrinking further

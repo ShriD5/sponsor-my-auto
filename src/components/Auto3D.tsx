@@ -1,7 +1,7 @@
 "use client";
 import { Component, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Decal, OrbitControls, useGLTF } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { ContactShadows, OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import type { SlotState } from "@/lib/state";
 import { drawSticker } from "./sticker";
@@ -15,7 +15,7 @@ function useStickerTexture(slot: SlotState, aspect: number) {
     let dead = false;
     drawSticker(slot, aspect).then((c) => {
       if (dead) return;
-      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.needsUpdate = true;
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; t.needsUpdate = true;
       setTex((old) => { old?.dispose(); return t; });
     });
     return () => { dead = true; };
@@ -25,35 +25,27 @@ function useStickerTexture(slot: SlotState, aspect: number) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Placement: raycast onto the model, project a Decal there            */
+/* Placement: raycast onto the model, mount a flat panel at the hit    */
 /* ------------------------------------------------------------------ */
 
-type Placement = { mesh: THREE.Mesh; position: THREE.Vector3; rotation: THREE.Euler; scale: THREE.Vector3; point: THREE.Vector3; quat: THREE.Quaternion; dir: THREE.Vector3; w: number; h: number; lift: number };
+type Placement = { point: THREE.Vector3; quat: THREE.Quaternion; dir: THREE.Vector3; w: number; h: number; lift: number };
 
-function place(obj: THREE.Object3D, origin: THREE.Vector3, dir: THREE.Vector3, w: number, h: number, depth: number, up?: THREE.Vector3, lift = 0.012): Placement | null {
+function place(obj: THREE.Object3D, origin: THREE.Vector3, dir: THREE.Vector3, w: number, h: number, lift: number, up?: THREE.Vector3): Placement | null {
   const d = dir.clone().normalize();
   const rc = new THREE.Raycaster(origin, d);
   const all = rc.intersectObject(obj, true).filter((x) => (x.object as THREE.Mesh).isMesh);
   if (typeof window !== "undefined" && window.location.search.includes("dbg")) console.log("[place]", origin.toArray().map((v) => +v.toFixed(2)), "->", all.slice(0, 4).map((x) => `${x.object.name}@${x.point.toArray().map((v) => +v.toFixed(2)).join(",")}`).join(" | "));
   const hit = all[0]; // first surface the ray touches, glass included: stickers go on the outside
   if (!hit) return null;
-  const mesh = hit.object as THREE.Mesh;
   const helper = new THREE.Object3D();
   helper.position.copy(hit.point);
   if (up) helper.up.copy(up);
   helper.lookAt(hit.point.clone().sub(d)); // +z points back toward the viewer
-  const qMesh = new THREE.Quaternion(); mesh.getWorldQuaternion(qMesh);
-  const qLocal = qMesh.invert().multiply(helper.quaternion);
-  const ws = new THREE.Vector3(); mesh.getWorldScale(ws);
-  return {
-    mesh,
-    position: mesh.worldToLocal(hit.point.clone()),
-    rotation: new THREE.Euler().setFromQuaternion(qLocal),
-    scale: new THREE.Vector3(w / ws.x, h / ws.y, depth / ws.z),
-    point: hit.point.clone(), quat: helper.quaternion.clone(), dir: d, w, h, lift,
-  };
+  return { point: hit.point.clone(), quat: helper.quaternion.clone(), dir: d, w, h, lift };
 }
 
+/** A printed panel mounted a few mm outside the skin. We deliberately do not project a decal onto the mesh:
+ *  the panel in front hides it anyway, and where the curved body pokes through it z-fights and reads as scratches. */
 function Sticker({ p, slot, aspect, onPick }: { p: Placement; slot: SlotState; aspect: number; onPick: (s: SlotState) => void }) {
   const tex = useStickerTexture(slot, aspect);
   const [hover, setHover] = useState(false);
@@ -61,22 +53,14 @@ function Sticker({ p, slot, aspect, onPick }: { p: Placement; slot: SlotState; a
   const over = (e: { stopPropagation: () => void }) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; };
   const out = () => { setHover(false); document.body.style.cursor = ""; };
   const click = (e: { stopPropagation: () => void }) => { e.stopPropagation(); onPick(slot); };
-  const tint = hover ? "#ffffff" : "#e9e2d0";
-  // backing panel a hair outside the skin: covers window glass and open sides, so the sticker reads as a stretched fabric panel
-  const backPos = p.point.clone().sub(p.dir.clone().multiplyScalar(p.lift));
+  // sponsored stickers are shown in true colour; only the empty placeholders get the cream paper tint
+  const tint = hover || slot.sponsor ? "#ffffff" : "#e9e2d0";
+  const pos = p.point.clone().sub(p.dir.clone().multiplyScalar(p.lift));
   return (
-    <>
-      {createPortal(
-        <Decal position={p.position} rotation={p.rotation} scale={p.scale} renderOrder={20} onClick={click} onPointerOver={over} onPointerOut={out}>
-          <meshBasicMaterial map={tex} transparent polygonOffset polygonOffsetFactor={-12} toneMapped={false} color={tint} side={THREE.DoubleSide} />
-        </Decal>,
-        p.mesh
-      )}
-      <mesh position={backPos} quaternion={p.quat} renderOrder={19} onClick={click} onPointerOver={over} onPointerOut={out}>
-        <planeGeometry args={[p.w, p.h]} />
-        <meshBasicMaterial map={tex} toneMapped={false} color={tint} side={THREE.FrontSide} />
-      </mesh>
-    </>
+    <mesh position={pos} quaternion={p.quat} renderOrder={19} onClick={click} onPointerOver={over} onPointerOut={out}>
+      <planeGeometry args={[p.w, p.h]} />
+      <meshBasicMaterial map={tex} toneMapped={false} color={tint} side={THREE.FrontSide} />
+    </mesh>
   );
 }
 
@@ -110,12 +94,13 @@ function GlbRickshaw({ slots, onPick }: { slots: AutoSlotMap; onPick: (s: SlotSt
     if (typeof window !== "undefined" && window.location.search.includes("dbg")) console.log("[dims]", { L: +L.toFixed(3), H: +H.toFixed(3), W: +W.toFixed(3) });
     const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
     return {
-      hood:     { p: place(obj, v(-far, H * 0.745, 0), v(1, 0, 0), W * 0.80, H * 0.34, 0.16, undefined, 0.06), aspect: (W * 0.80) / (H * 0.34) },
-      visor:    { p: place(obj, v(far, H * 0.935, 0), v(-1, 0, 0), W * 0.70, H * 0.055, 0.12), aspect: (W * 0.70) / (H * 0.055) },
-      "side-l": { p: place(obj, v(-L * 0.34, H * 0.755, far), v(0, 0, -1), L * 0.17, H * 0.23, 0.08), aspect: (L * 0.17) / (H * 0.23) },
-      "side-r": { p: place(obj, v(-L * 0.34, H * 0.755, -far), v(0, 0, 1), L * 0.17, H * 0.23, 0.08), aspect: (L * 0.17) / (H * 0.23) },
+      // last arg is the lift off the surface (m): enough that the curved body never pokes through the flat panel
+      hood:     { p: place(obj, v(-far, H * 0.745, 0), v(1, 0, 0), W * 0.80, H * 0.34, 0.06), aspect: (W * 0.80) / (H * 0.34) },
+      visor:    { p: place(obj, v(far, H * 0.935, 0), v(-1, 0, 0), W * 0.70, H * 0.055, 0.03), aspect: (W * 0.70) / (H * 0.055) },
+      "side-l": { p: place(obj, v(-L * 0.34, H * 0.755, far), v(0, 0, -1), L * 0.17, H * 0.23, 0.03), aspect: (L * 0.17) / (H * 0.23) },
+      "side-r": { p: place(obj, v(-L * 0.34, H * 0.755, -far), v(0, 0, 1), L * 0.17, H * 0.23, 0.03), aspect: (L * 0.17) / (H * 0.23) },
       // roofline: aimed from behind-and-above at the rear roof edge so it reads from the traffic behind, above the hood panel
-      top:      (() => { const d = v(1, -0.55, 0).normalize(), t = v(-L * 0.43, H * 0.93, 0); return { p: place(obj, t.clone().sub(d.clone().multiplyScalar(far)), d, W * 0.66, L * 0.055, 0.28, undefined, 0.02), aspect: (W * 0.66) / (L * 0.055) }; })(),
+      top:      (() => { const d = v(1, -0.55, 0).normalize(), t = v(-L * 0.43, H * 0.93, 0); return { p: place(obj, t.clone().sub(d.clone().multiplyScalar(far)), d, W * 0.66, L * 0.055, 0.02), aspect: (W * 0.66) / (L * 0.055) }; })(),
     } as Record<keyof AutoSlotMap, { p: Placement | null; aspect: number }>;
   }, [obj, L, H, W]);
 
