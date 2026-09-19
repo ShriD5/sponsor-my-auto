@@ -70,6 +70,7 @@ export default function Admin() {
   const maxH = Math.max(1, ...s.hourly.map((x) => x.n));
   const maxD = Math.max(1, ...s.daily.map((x) => x.n));
   const hours = Array.from({ length: 48 }, (_, i) => { const d = new Date(Date.now() - (47 - i) * 3600_000); d.setUTCMinutes(0, 0, 0); const k = d.toISOString().slice(0, 13) + ":00:00Z"; return s.hourly.find((x) => x.h === k) ?? { h: k, n: 0, u: 0 }; });
+  const days = Array.from({ length: 30 }, (_, i) => { const k = new Date(Date.now() - (29 - i) * 86400_000).toISOString().slice(0, 10); return s.daily.find((x) => x.d === k) ?? { d: k, n: 0, u: 0 }; });
 
   return (
     <main className="flex-1 max-w-6xl mx-auto px-5 py-8 w-full text-cream">
@@ -117,7 +118,7 @@ export default function Admin() {
         <Bars data={hours.map((x) => ({ k: x.h.slice(11, 13), n: x.n, u: x.u, title: `${x.h.slice(5, 16).replace("T", " ")} UTC` }))} max={maxH} />
       </Section>
       <Section title="Views per day · last 30 days">
-        <Bars data={s.daily.map((x) => ({ k: x.d.slice(5), n: x.n, u: x.u, title: x.d }))} max={maxD} wide />
+        <Bars data={days.map((x) => ({ k: x.d.slice(8), n: x.n, u: x.u, title: x.d }))} max={maxD} wide />
       </Section>
 
       {/* breakdowns */}
