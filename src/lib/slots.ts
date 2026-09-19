@@ -16,7 +16,7 @@ export const AUTO = { id: "a1", name: "The Auto", driver: "Driver TBD", area: "B
 export const SLOT_DEFS: SlotDef[] = [
   {
     id: "a1-hood", autoId: "a1", kind: "hood", name: "The Hood", short: "THE HOOD",
-    basePriceCents: 350000, tag: "THE BIG ONE",
+    basePriceCents: 250000, tag: "THE BIG ONE",
     lines: ["The whole rear of the canopy, ~8–9 sq ft", "Read by every car stuck behind it, all day", "~10k eyeballs a day", "Printed panel shipped to you after"],
   },
   {
