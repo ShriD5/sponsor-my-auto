@@ -2,15 +2,18 @@
  * One-time Dodo setup. Needs DODO_PAYMENTS_API_KEY (+ DODO_PAYMENTS_ENVIRONMENT) in env.
  *   npx tsx --env-file=.env.local scripts/dodo-setup.ts https://your-host.vercel.app
  * Creates a pay-what-you-want product (min $1) used for every slot with a per-checkout amount,
- * and a webhook for payment.succeeded. Prints IDs; the webhook secret is written to .dodo-secret (gitignored).
+ * and a webhook for payment.succeeded, payment.failed, and refund.succeeded.
+ * Prints IDs; the webhook secret is written to .dodo-secret (gitignored).
  */
 import DodoPayments from "dodopayments";
 import { writeFileSync } from "node:fs";
 
+const WEBHOOK_EVENTS = ["payment.succeeded", "payment.failed", "refund.succeeded"] as const;
+
 const host = process.argv[2];
 const client = new DodoPayments({
   bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
-  environment: (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") || "test_mode",
+  environment: (process.env.DODO_PAYMENTS_ENVIRONMENT as "test_mode" | "live_mode") || "live_mode",
 });
 
 async function main() {
@@ -29,9 +32,17 @@ async function main() {
 
   if (host) {
     const url = `${host.replace(/\/$/, "")}/api/webhooks/dodo`;
-    const existing = await client.webhooks.list();
-    const found = existing.data?.find((w) => w.url === url);
-    const wh = found ?? (await client.webhooks.create({ url, filter_types: ["payment.succeeded"] }));
+    let found: { id: string; url: string } | undefined;
+    for await (const w of client.webhooks.list()) {
+      if (w.url === url) {
+        found = w;
+        break;
+      }
+    }
+    const filter_types = [...WEBHOOK_EVENTS];
+    const wh = found
+      ? await client.webhooks.update(found.id, { filter_types })
+      : await client.webhooks.create({ url, filter_types });
     const secret = await client.webhooks.retrieveSecret(wh.id);
     writeFileSync(".dodo-secret", secret.secret + "\n", { mode: 0o600 });
     console.log("webhook:", wh.id, url);

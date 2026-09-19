@@ -6,10 +6,10 @@ set -e
 set -a; . ./.env.local; set +a
 SECRET=$(cat .dodo-secret)
 [[ -z "$DODO_PAYMENTS_API_KEY" || -z "$DODO_PRODUCT_ID" || -z "$SECRET" ]] && { echo "missing key / product id / .dodo-secret"; exit 1; }
-add() { printf '%s' "$2" | npx vercel env add "$1" production --scope shrithans-personal --force --non-interactive >/dev/null && echo "env $1 ok"; }
+add() { printf '%s' "$2" | npx vercel env add "$1" production --scope shrithans-personal --force --yes --sensitive >/dev/null && echo "env $1 ok"; }
 add DODO_PAYMENTS_API_KEY "$DODO_PAYMENTS_API_KEY"
 add DODO_PRODUCT_ID "$DODO_PRODUCT_ID"
 add DODO_WEBHOOK_SECRET "$SECRET"
-add DODO_PAYMENTS_ENVIRONMENT "${DODO_PAYMENTS_ENVIRONMENT:-test_mode}"
+add DODO_PAYMENTS_ENVIRONMENT "${DODO_PAYMENTS_ENVIRONMENT:-live_mode}"
 add MOCK_PAY "0"
 npx vercel deploy --prod --yes --scope shrithans-personal | tail -3
