@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { db, schema } from "@/lib/db";
+import { and, eq } from "drizzle-orm";
 import { settlePaid } from "@/lib/settle";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,13 @@ export async function POST(req: NextRequest) {
     const d = evt.data as { payment_id: string; total_amount: number; metadata?: Record<string, string> };
     const purchaseId = d.metadata?.purchase_id;
     if (purchaseId) await settlePaid(purchaseId, d.payment_id, d.total_amount);
+  } else if (evt.type === "refund.succeeded") {
+    const d = evt.data as { payment_id: string; refund_id: string };
+    await db.update(schema.purchases).set({ status: "refunded", refundId: d.refund_id })
+      .where(and(eq(schema.purchases.paymentId, d.payment_id), eq(schema.purchases.status, "superseded")));
+  } else if (evt.type === "payment.failed") {
+    const d = evt.data as { metadata?: Record<string, string> };
+    if (d.metadata?.purchase_id) await db.update(schema.purchases).set({ status: "failed" }).where(and(eq(schema.purchases.id, d.metadata.purchase_id), eq(schema.purchases.status, "pending")));
   }
   return NextResponse.json({ received: true });
 }

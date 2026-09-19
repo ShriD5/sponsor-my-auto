@@ -42,7 +42,7 @@ export const SLOT_DEFS: SlotDef[] = [
   {
     id: "site-page", autoId: "site", kind: "page", name: "The Page", short: "THE PAGE",
     basePriceCents: 50000, tag: "THE INTERNET",
-    lines: ["Presented-by banner on this site", "Named in every post for the month", "Your link, dofollow, all month", "Cheapest way into the story"],
+    lines: ["Presented-by banner on this site", "Named in every post for the month", "Your logo and link on this site all month", "Cheapest way into the story"],
   },
 ];
 
@@ -51,5 +51,7 @@ export const slotById = (id: string) => SLOT_DEFS.find((s) => s.id === id);
 export const fmtUsd = (cents: number) =>
   "$" + (cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
+/** Takeover step. 2 = Marc Lou / Sponsor My Dress style doubling. Override with TAKEOVER_MULTIPLIER (e.g. 1.5). */
+export const TAKEOVER_MULTIPLIER = Number(process.env.TAKEOVER_MULTIPLIER || process.env.NEXT_PUBLIC_TAKEOVER_MULTIPLIER || 2);
 export const nextPrice = (basePriceCents: number, currentPriceCents: number, hasActive: boolean) =>
-  hasActive ? currentPriceCents * 2 : basePriceCents;
+  hasActive ? Math.round((currentPriceCents * TAKEOVER_MULTIPLIER) / 100) * 100 : basePriceCents;

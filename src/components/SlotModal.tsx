@@ -3,21 +3,42 @@ import { useRef, useState } from "react";
 import type { SlotState } from "@/lib/state";
 import { fmtUsd } from "@/lib/slots";
 
+const MAX_BYTES = 380_000;
+
 async function fileToDataUrl(file: File): Promise<string> {
-  // Rasterize everything (incl. SVG) to WebP so it works as a 3D texture.
+  if (/heic|heif/i.test(file.type) || /\.hei[cf]$/i.test(file.name)) throw new Error("iPhone HEIC photos aren't supported. Export as PNG or JPG.");
+  if (!/^image\//.test(file.type)) throw new Error(`"${file.name}" isn't an image. Use PNG, JPG, WebP, or SVG.`);
+  if (file.size > 15_000_000) throw new Error("That file is over 15MB. Please shrink it first.");
+
+  // SVG: make sure it has an intrinsic size, otherwise browsers decode it at 0×0
+  let blob: Blob = file;
+  if (file.type === "image/svg+xml") {
+    let svg = await file.text();
+    if (!/\swidth=/.test(svg.slice(0, 2000)) || !/\sheight=/.test(svg.slice(0, 2000))) svg = svg.replace(/<svg([^>]*)>/i, '<svg$1 width="1024" height="1024">');
+    blob = new Blob([svg], { type: "image/svg+xml" });
+  }
   const img = new Image();
-  const objUrl = URL.createObjectURL(file);
-  await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error("Could not read image")); img.src = objUrl; });
-  const w = img.naturalWidth || 512, h = img.naturalHeight || 512;
-  const max = 640, scale = Math.min(1, max / Math.max(w, h));
-  const c = document.createElement("canvas");
-  c.width = Math.max(1, Math.round(w * scale)); c.height = Math.max(1, Math.round(h * scale));
-  c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
-  URL.revokeObjectURL(objUrl);
-  let q = 0.9, out = c.toDataURL("image/webp", q);
-  while (out.length > 380_000 && q > 0.4) { q -= 0.1; out = c.toDataURL("image/webp", q); }
-  if (out.length > 400_000) throw new Error("Logo still too big after compression");
-  return out;
+  const objUrl = URL.createObjectURL(blob);
+  try {
+    await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error(`Couldn't read "${file.name}". Try a PNG or JPG.`)); img.src = objUrl; });
+    let w = img.naturalWidth || 1024, h = img.naturalHeight || 1024;
+    let max = 800;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const scale = Math.min(1, max / Math.max(w, h));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(w * scale)); c.height = Math.max(1, Math.round(h * scale));
+      const g = c.getContext("2d")!; g.drawImage(img, 0, 0, c.width, c.height);
+      // WebP where supported (Chrome/Firefox); Safari ignores the type and returns PNG, so we also shrink dimensions
+      let out = c.toDataURL("image/webp", 0.88);
+      if (!out.startsWith("data:image/webp")) out = c.toDataURL("image/png");
+      if (out.length <= MAX_BYTES) return out;
+      // last resort: JPEG (no transparency) before shrinking further
+      const jpg = c.toDataURL("image/jpeg", 0.85);
+      if (jpg.length <= MAX_BYTES && attempt >= 3) return jpg;
+      max = Math.round(max * 0.75);
+    }
+    throw new Error("Couldn't get that logo under 380KB. Try a simpler PNG.");
+  } finally { URL.revokeObjectURL(objUrl); }
 }
 
 export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => void }) {
@@ -67,7 +88,7 @@ export function SlotModal({ slot, onClose }: { slot: SlotState; onClose: () => v
             className="aspect-square rounded-xl bg-white ink-border-soft flex items-center justify-center overflow-hidden hover:bg-paper">
             {logo ? <img src={logo} alt="logo preview" className="w-full h-full object-contain p-2" /> : <span className="font-accent text-indigo text-center text-sm px-2">+ upload<br />logo</span>}
           </button>
-          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden"
+          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" className="hidden"
             onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { setLogo(await fileToDataUrl(f)); setErr(null); } catch (er) { setErr((er as Error).message); } }} />
           <div className="space-y-3">
             <input required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} placeholder="Brand / your name"

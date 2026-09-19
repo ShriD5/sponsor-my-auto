@@ -31,12 +31,12 @@ export function Board({ initial }: { initial: State }) {
   const physical = state.slots.filter((s) => s.autoId === "a1");
   const closed = state.saleEndsAt ? Date.now() > Date.parse(state.saleEndsAt) : false;
   const pick = (s: SlotState) => { if (!closed) setOpen(s); };
-  const wrap = state.wrapDay ? new Date(state.wrapDay).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "wrap day";
+  const wrap = state.wrapDay ? (() => { const d = new Date(state.wrapDay); const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; return `${d.getUTCDate()} ${M[d.getUTCMonth()]}`; })() : "wrap day";
 
   return (
     <main className="flex-1 sel">
       {page.sponsor && (
-        <a href={page.sponsor.url} target="_blank" rel="noopener sponsored" className="block bg-marigold text-ink text-center py-2 font-accent text-lg">
+        <a href={page.sponsor.url} target="_blank" rel="noopener nofollow sponsored ugc" className="block bg-marigold text-ink text-center py-2 font-accent text-lg">
           Presented by <img src={page.sponsor.logo} alt="" className="inline h-6 mx-2 align-middle" /> <b>{page.sponsor.name}</b>
         </a>
       )}
@@ -141,7 +141,7 @@ export function Board({ initial }: { initial: State }) {
               <div className="flex-1 min-w-0">
                 <div className="font-display text-2xl text-indigo leading-none">{s.name}</div>
                 <div className="font-accent text-ink/70 truncate">
-                  {s.sponsor ? <>held by <a href={s.sponsor.url} target="_blank" rel="noopener sponsored" className="text-pink underline">{s.sponsor.name}</a> · paid {fmtUsd(s.currentPriceCents)}</> : "nobody's on it yet. be the first, or wait and pay double."}
+                  {s.sponsor ? <>held by <a href={s.sponsor.url} target="_blank" rel="noopener nofollow sponsored ugc" className="text-pink underline">{s.sponsor.name}</a> · paid {fmtUsd(s.currentPriceCents)}</> : "nobody's on it yet. be the first, or wait and pay double."}
                 </div>
               </div>
               <button disabled={closed} onClick={() => pick(s)}

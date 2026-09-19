@@ -14,6 +14,12 @@ export async function settlePaid(purchaseId: string, paymentId: string | null, p
   if (p.status === "paid" || p.status === "superseded" || p.status === "refunded") return p;
 
   const amount = paidAmountCents ?? p.amountCents;
+  if (amount < p.amountCents) {
+    // paid less than the slot price (tampered PWYW amount): don't activate, refund what came in
+    await db.update(schema.purchases).set({ status: "failed", paymentId, amountCents: amount }).where(eq(schema.purchases.id, purchaseId));
+    if (paymentId && !p.isMock && !isMockPay()) { try { await dodo().refunds.create({ payment_id: paymentId }); } catch (e) { console.error("short-pay refund failed", purchaseId, e); } }
+    return { ...p, status: "failed" };
+  }
   const [slot] = await db.select().from(schema.slots).where(eq(schema.slots.id, p.slotId));
   const prevId = slot?.activePurchaseId ?? null;
 
