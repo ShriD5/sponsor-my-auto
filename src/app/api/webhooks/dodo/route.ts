@@ -3,6 +3,7 @@ import { Webhook } from "standardwebhooks";
 import { db, schema } from "@/lib/db";
 import { and, eq } from "drizzle-orm";
 import { settlePaid, paidUsdCents, type PaidAmounts } from "@/lib/settle";
+import { retryPendingRefunds } from "@/lib/refunds";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ export async function POST(req: NextRequest) {
     const d = evt.data as PaidAmounts & { payment_id: string; metadata?: Record<string, string> };
     const purchaseId = d.metadata?.purchase_id;
     if (purchaseId) await settlePaid(purchaseId, d.payment_id, paidUsdCents(d));
+    // a new payment is when the Dodo wallet gains funds: clear any refunds that failed earlier on balance
+    try { await retryPendingRefunds(); } catch (e) { console.error("retry-refunds", e); }
   } else if (evt.type === "refund.succeeded") {
     const d = evt.data as { payment_id: string; refund_id: string };
     const [p] = await db.update(schema.purchases).set({ status: "refunded", refundId: d.refund_id })

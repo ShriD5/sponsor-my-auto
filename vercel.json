@@ -1,5 +1,5 @@
 {
   "crons": [
-    { "path": "/api/cron/retry-refunds", "schedule": "*/30 * * * *" }
+    { "path": "/api/cron/retry-refunds", "schedule": "30 3 * * *" }
   ]
 }
