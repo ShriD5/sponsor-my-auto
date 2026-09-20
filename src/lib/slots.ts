@@ -16,32 +16,32 @@ export const AUTO = { id: "a1", name: "The Auto", driver: "Driver TBD", area: "B
 export const SLOT_DEFS: SlotDef[] = [
   {
     id: "a1-hood", autoId: "a1", kind: "hood", name: "The Hood", short: "THE HOOD",
-    basePriceCents: 250000, tag: "THE BIG ONE",
+    basePriceCents: 200000, tag: "THE BIG ONE",
     lines: ["The whole rear of the canopy, ~8–9 sq ft", "Read by every car stuck behind it, all day", "~10k eyeballs a day", "Printed panel shipped to you after"],
   },
   {
     id: "a1-side-l", autoId: "a1", kind: "side", name: "Left Side", short: "LEFT SIDE",
-    basePriceCents: 80000, tag: "FOOTPATH SIDE",
+    basePriceCents: 50000, tag: "FOOTPATH SIDE",
     lines: ["Vertical panel on the left of the canopy", "Faces the footpath and every bus stop", "Pedestrian eye level, close range", "~3 sq ft"],
   },
   {
     id: "a1-side-r", autoId: "a1", kind: "side", name: "Right Side", short: "RIGHT SIDE",
-    basePriceCents: 80000, tag: "TRAFFIC SIDE",
+    basePriceCents: 50000, tag: "TRAFFIC SIDE",
     lines: ["Vertical panel on the right of the canopy", "Faces overtaking bikes and cars", "Seen at every signal, every lane change", "~3 sq ft"],
   },
   {
     id: "a1-visor", autoId: "a1", kind: "visor", name: "The Visor", short: "THE VISOR",
-    basePriceCents: 75000, tag: "THE FACE",
+    basePriceCents: 45000, tag: "THE FACE",
     lines: ["Strip across the front, above the windshield", "Seen by everything the auto drives at", "Where drivers paint their own name", "Your name instead, for a month"],
   },
   {
     id: "a1-top", autoId: "a1", kind: "top", name: "The Roofline", short: "ROOFLINE",
-    basePriceCents: 50000, tag: "THE CHERRY",
+    basePriceCents: 30000, tag: "THE CHERRY",
     lines: ["Thin strip along the top edge of the hood", "Reads from behind, above the big panel", "Bus and truck drivers see this one", "Cheapest spot on the metal"],
   },
   {
     id: "site-page", autoId: "site", kind: "page", name: "The Page", short: "THE PAGE",
-    basePriceCents: 50000, tag: "THE INTERNET",
+    basePriceCents: 30000, tag: "THE INTERNET",
     lines: ["Presented-by banner on this site", "Named in every post for the month", "Your logo and link on this site all month", "Cheapest way into the story"],
   },
 ];

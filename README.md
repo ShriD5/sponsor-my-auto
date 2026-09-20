@@ -1,6 +1,6 @@
 # Sponsor My Auto
 
-One auto-rickshaw, 30 days, 6 slots: The Hood ($2,500), Left Side ($800), Right Side ($800), The Visor ($750), The Roofline ($500), The Page ($500). No login: pay → upload logo → live instantly. Any slot can be taken over for 2x; the previous sponsor is auto-refunded. No back panel (not permitted on autos locally).
+One auto-rickshaw, 30 days, 6 slots: The Hood ($2,000), Left Side ($500), Right Side ($500), The Visor ($450), The Roofline ($300), The Page ($300). No login: pay → upload logo → live instantly. Any slot can be taken over for 2x; the previous sponsor is auto-refunded. No back panel (not permitted on autos locally).
 
 - Prod: https://sponsormyauto.lol
 - Stack: Next.js 16, Neon Postgres (drizzle), Dodo Payments (pay-what-you-want product + per-checkout amount), Vercel.
@@ -64,7 +64,7 @@ Brand stays "Sponsor My Auto" (genre convention: Sponsor My Body / dress / tuxed
 > The hood is the big one. Left and right sides face the traffic. Visor faces oncoming traffic. Roofline is the cheap seat. "The Page" is the banner on the site.
 
 **6 / CTA**
-> The hood is open at $2,500 right now. Someone will double it. Might as well be you first.
+> The hood is open at $2,000 right now. Someone will double it. Might as well be you first.
 > → sponsormyauto.lol
 
 Reveal-day follow-up: real wrapped auto, driver, first ride video. Tag every sponsor.

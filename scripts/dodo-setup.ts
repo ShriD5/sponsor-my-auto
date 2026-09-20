@@ -24,7 +24,7 @@ async function main() {
       name: "Sponsor My Auto — slot",
       description: "One ad slot on a Bengaluru auto rickshaw for 30 days (hood, driver tee, or site banner). Amount set per slot at checkout.",
       tax_category: "digital_products",
-      price: { type: "one_time_price", currency: "USD", price: 100, pay_what_you_want: true, suggested_price: 250000 },
+      price: { type: "one_time_price", currency: "USD", price: 100, pay_what_you_want: true, suggested_price: 200000 },
     });
     productId = product.product_id;
     console.log("DODO_PRODUCT_ID=" + productId);

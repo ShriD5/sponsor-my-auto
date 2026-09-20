@@ -38,7 +38,7 @@ export default async function OG() {
         </div>
         <div style={{ display: "flex", gap: 24, marginTop: "auto", alignItems: "flex-end" }}>
           {taken.length === 0
-            ? <>{card("the hood", `${hood ? fmtUsd(hood.nextPriceCents) : "$2,500"} · open`, "#faf3e0", "#1b1f5c")}{card("30 days · 6 slots", "take any for 2x", "#e63e8b", "#faf3e0")}</>
+            ? <>{card("the hood", `${hood ? fmtUsd(hood.nextPriceCents) : "$2,000"} · open`, "#faf3e0", "#1b1f5c")}{card("30 days · 6 slots", "take any for 2x", "#e63e8b", "#faf3e0")}</>
             : <>{card("raised", fmtUsd(s.raisedCents), "#faf3e0", "#1b1f5c")}{card("slots taken", `${taken.length}/${s.slots.length}`, "#e63e8b", "#faf3e0")}</>}
           <div style={{ display: "flex", gap: 12, marginLeft: "auto" }}>
             {taken.slice(0, 5).map((t) => <img key={t.id} src={`${origin}${t.sponsor!.logo}`} width={88} height={88} style={{ display: "flex", background: "#fff", borderRadius: 12, objectFit: "contain" }} />)}
