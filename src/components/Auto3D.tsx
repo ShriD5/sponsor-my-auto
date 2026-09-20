@@ -130,7 +130,7 @@ function debugCam(): [number, number, number] | null {
   const q = new URLSearchParams(window.location.search);
   const c = q.get("cam");
   const d = q.has("mock") ? 4.1 : 6; // mockups: tighter framing for reply images
-  return c === "rear" ? [-d, 1.6, 0.01] : c === "front" ? [d, 1.6, 0.01] : c === "side" ? [0.01, 1.6, d] : c === "side2" ? [0.01, 1.6, -d] : c === "top" ? [0.01, d + 1, 0.01] : null;
+  return c === "rq" ? [-d * 0.82, 1.5, d * 0.62] : c === "rear" ? [-d, 1.6, 0.01] : c === "front" ? [d, 1.6, 0.01] : c === "side" ? [0.01, 1.6, d] : c === "side2" ? [0.01, 1.6, -d] : c === "top" ? [0.01, d + 1, 0.01] : null;
 }
 
 function FitCamera({ base }: { base: [number, number, number] }) {

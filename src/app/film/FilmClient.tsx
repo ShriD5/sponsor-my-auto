@@ -6,11 +6,14 @@ export function FilmClient({ slots }: { slots: SlotState[] }) {
   // ?mock=/mockups/x.png&brand=Name&slot=a1-hood  → render a fake sponsor on that slot (for "reply with your logo" mockups)
   const q = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
   const mockLogo = q?.get("mock"), mockBrand = q?.get("brand") ?? "Your brand", mockSlot = q?.get("slot") ?? "a1-hood";
+  // multi: ?mocks=a1-hood:/mockups/a.png:Brand A,a1-side-l:/mockups/b.png:Brand B
+  const multi: Record<string, { logo: string; brand: string }> = {};
+  for (const part of (q?.get("mocks") ?? "").split(",").filter(Boolean)) { const [sid, logo, ...b] = part.split(":"); if (sid && logo?.startsWith("/mockups/")) multi[sid] = { logo, brand: b.join(":") || "Your brand" }; }
+  if (mockLogo && mockLogo.startsWith("/mockups/")) multi[mockSlot] = { logo: mockLogo, brand: mockBrand };
   const slot = (id: string) => {
     const s = slots.find((s) => s.id === id)!;
-    if (mockLogo && id === mockSlot && mockLogo.startsWith("/mockups/")) {
-      return { ...s, sponsor: { name: mockBrand, url: "#", logo: mockLogo, amountCents: s.nextPriceCents, since: new Date().toISOString() }, currentPriceCents: s.nextPriceCents, nextPriceCents: s.nextPriceCents };
-    }
+    const m = multi[id];
+    if (m) return { ...s, sponsor: { name: m.brand, url: "#", logo: m.logo, amountCents: s.nextPriceCents, since: new Date().toISOString() }, currentPriceCents: s.nextPriceCents, nextPriceCents: s.nextPriceCents };
     return s;
   };
   const autoSlots = { hood: slot("a1-hood"), visor: slot("a1-visor"), "side-l": slot("a1-side-l"), "side-r": slot("a1-side-r"), top: slot("a1-top") };
