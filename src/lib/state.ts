@@ -66,14 +66,15 @@ export async function getState() {
   });
   const raisedCents = rows.reduce((a, r) => a + (r.activePurchaseId ? (byId.get(r.activePurchaseId)?.amountCents ?? 0) : 0), 0);
   const since = new Date(Date.now() - 60_000);
-  const [[live], [visits], [takeovers]] = await Promise.all([
+  const [[live], [visits], [takeovers], [people]] = await Promise.all([
     db.select({ n: sql<number>`count(*)::int` }).from(schema.visitors).where(gt(schema.visitors.lastSeen, since)),
     db.select({ n: sql<number>`coalesce(sum(${schema.visitors.views}),0)::int` }).from(schema.visitors),
     db.select({ n: sql<number>`count(*)::int` }).from(schema.purchases).where(or(eq(schema.purchases.status, "superseded"), eq(schema.purchases.status, "refunded"))),
+    db.select({ n: sql<number>`count(*)::int` }).from(schema.visitors),
   ]);
   return {
     slots, raisedCents,
-    live: live?.n ?? 0, visits: visits?.n ?? 0, takeovers: takeovers?.n ?? 0,
+    live: live?.n ?? 0, visits: visits?.n ?? 0, takeovers: takeovers?.n ?? 0, people: people?.n ?? 0,
     saleEndsAt: process.env.SALE_ENDS_AT ?? null,
     wrapDay: process.env.WRAP_DAY ?? null,
     mock: process.env.MOCK_PAY === "1",

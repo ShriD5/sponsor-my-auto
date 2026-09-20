@@ -9,7 +9,7 @@ import { usePresence, track } from "./usePresence";
 
 const Auto3D = dynamic(() => import("./Auto3D").then((m) => m.Auto3D), { ssr: false, loading: () => null });
 
-type State = { slots: SlotState[]; raisedCents: number; live: number; visits: number; takeovers: number; saleEndsAt: string | null; wrapDay: string | null; mock: boolean };
+type State = { slots: SlotState[]; raisedCents: number; live: number; visits: number; people: number; takeovers: number; saleEndsAt: string | null; wrapDay: string | null; mock: boolean };
 
 const MARQUEE = ["HORN OK PLEASE", "ONE AUTO", "A.K.A. TUK TUK", "SIX SLOTS", "30 DAYS", "8–12K EYEBALLS A DAY", "NO LOGIN", "TAKE IT FOR 2X", "EVERY DOLLAR BACK", "BENGALURU", "YOUR LOGO HERE"];
 
@@ -46,10 +46,10 @@ export function Board({ initial }: { initial: State }) {
         <div className="absolute inset-0 glow" />
 
         {/* top bar */}
-        <div className="relative z-10 flex items-center justify-between px-5 sm:px-8 pt-5 pointer-events-none">
-          <div className="font-accent text-marigold text-xl">ऑटो · ಆಟೋ · auto · tuk tuk</div>
-          <div className="flex gap-2 pointer-events-auto">
-            <div className="paper rounded-lg px-3 py-1.5 ink-border-soft text-sm font-accent"><span className="inline-block w-2 h-2 rounded-full bg-teal mr-1.5 align-middle animate-pulse" /><b className="font-display text-indigo text-base">{state.live}</b> <span className="text-ink/60">here now</span></div>
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-y-2 px-5 sm:px-8 pt-5 pointer-events-none">
+          <div className="font-accent text-marigold text-lg sm:text-xl">ऑटो · ಆಟೋ · auto · tuk tuk</div>
+          <div className="flex flex-wrap justify-end gap-2 pointer-events-auto">
+            <div className="paper rounded-lg px-3 py-1.5 ink-border-soft text-sm font-accent"><span className="inline-block w-2 h-2 rounded-full bg-teal mr-1.5 align-middle animate-pulse" /><b className="font-display text-indigo text-base">{state.live}</b> <span className="text-ink/60">here now</span> <span className="text-ink/30">·</span> <b className="font-display text-indigo text-base">{state.people.toLocaleString("en-US")}</b> <span className="text-ink/60">visitors</span></div>
             <div className="paper rounded-lg px-3 py-1.5 ink-border-soft text-sm font-accent"><span className="text-ink/60">raised</span> <b className="font-display text-indigo text-base">{fmtUsd(state.raisedCents)}</b></div>
           </div>
         </div>

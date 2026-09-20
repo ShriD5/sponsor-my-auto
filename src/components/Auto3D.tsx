@@ -8,12 +8,15 @@ import { drawSticker } from "./sticker";
 
 /* Sticker textures live in ./sticker.ts (shared with the purchase-modal preview). */
 
-function useStickerTexture(slot: SlotState, aspect: number) {
+/** Full-wrap mockup controls (/film only): repaint named model parts and draw stickers edge to edge. */
+export type AutoPaint = { top?: string; body?: string };
+
+function useStickerTexture(slot: SlotState, aspect: number, wrap: boolean) {
   const [tex, setTex] = useState<THREE.CanvasTexture | null>(null);
-  const key = `${slot.id}|${slot.sponsor?.logo?.slice(0, 64) ?? ""}|${slot.sponsor?.name ?? ""}|${slot.currentPriceCents}|${slot.nextPriceCents}|${aspect.toFixed(2)}`;
+  const key = `${slot.id}|${slot.sponsor?.logo?.slice(0, 64) ?? ""}|${slot.sponsor?.name ?? ""}|${slot.currentPriceCents}|${slot.nextPriceCents}|${aspect.toFixed(2)}|${wrap ? 1 : 0}`;
   useEffect(() => {
     let dead = false;
-    drawSticker(slot, aspect).then((c) => {
+    drawSticker(slot, aspect, { wrap }).then((c) => {
       if (dead) return;
       const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 16; t.needsUpdate = true;
       setTex((old) => { old?.dispose(); return t; });
@@ -46,8 +49,8 @@ function place(obj: THREE.Object3D, origin: THREE.Vector3, dir: THREE.Vector3, w
 
 /** A printed panel mounted a few mm outside the skin. We deliberately do not project a decal onto the mesh:
  *  the panel in front hides it anyway, and where the curved body pokes through it z-fights and reads as scratches. */
-function Sticker({ p, slot, aspect, onPick }: { p: Placement; slot: SlotState; aspect: number; onPick: (s: SlotState) => void }) {
-  const tex = useStickerTexture(slot, aspect);
+function Sticker({ p, slot, aspect, onPick, wrap }: { p: Placement; slot: SlotState; aspect: number; onPick: (s: SlotState) => void; wrap: boolean }) {
+  const tex = useStickerTexture(slot, aspect, wrap);
   const [hover, setHover] = useState(false);
   if (!tex) return null;
   const over = (e: { stopPropagation: () => void }) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; };
@@ -69,10 +72,23 @@ export const MODEL_CFG = { url: "/models/auto.glb", yaw: Math.PI / 2, length: 2.
 
 export type AutoSlotMap = Partial<Record<"hood" | "visor" | "side-l" | "side-r" | "top", SlotState>>;
 
-function GlbRickshaw({ slots, onPick }: { slots: AutoSlotMap; onPick: (s: SlotState) => void }) {
+/** Mesh names inside auto.glb. The canopy carries a dark texture, so repainting means dropping the map, not tinting it.
+ *  GLTFLoader sanitises node names (dots, spaces, brackets are dropped), so compare after the same normalisation. */
+const PART_MESH: Record<keyof AutoPaint, string> = { top: "Plane.002_Top_0", body: "Plane.001_Body_01_0" };
+const normName = (s: string) => s.replace(/[\s[\].:/]/g, "");
+
+function GlbRickshaw({ slots, onPick, wrap = false, paint }: { slots: AutoSlotMap; onPick: (s: SlotState) => void; wrap?: boolean; paint?: AutoPaint }) {
   const { scene } = useGLTF(MODEL_CFG.url);
   const { obj, L, H, W } = useMemo(() => {
     const obj = scene.clone(true);
+    for (const part of Object.keys(PART_MESH) as (keyof AutoPaint)[]) {
+      const color = paint?.[part];
+      if (!color) continue;
+      const want = normName(PART_MESH[part]);
+      obj.traverse((m) => {
+        if ((m as THREE.Mesh).isMesh && normName(m.name) === want) (m as THREE.Mesh).material = new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05 });
+      });
+    }
     obj.rotation.y = MODEL_CFG.yaw;
     obj.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(obj, true);
@@ -86,7 +102,7 @@ function GlbRickshaw({ slots, onPick }: { slots: AutoSlotMap; onPick: (s: SlotSt
     obj.updateMatrixWorld(true);
     obj.traverse((m) => { if ((m as THREE.Mesh).isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     return { obj, L: size.x * k, H: size.y * k, W: size.z * k };
-  }, [scene]);
+  }, [scene, paint?.top, paint?.body]);
 
   // one raycast per slot; sizes in metres (auto is 2.6 long)
   const placements = useMemo(() => {
@@ -109,7 +125,8 @@ function GlbRickshaw({ slots, onPick }: { slots: AutoSlotMap; onPick: (s: SlotSt
       <primitive object={obj} />
       {(Object.keys(placements) as (keyof AutoSlotMap)[]).map((k) => {
         const slot = slots[k]; const pl = placements[k];
-        return slot && pl.p ? <Sticker key={k} p={pl.p} slot={slot} aspect={pl.aspect} onPick={onPick} /> : null;
+        if (wrap && !slot?.sponsor) return null; // a wrap has no "your logo here" cards
+        return slot && pl.p ? <Sticker key={k} p={pl.p} slot={slot} aspect={pl.aspect} onPick={onPick} wrap={wrap} /> : null;
       })}
     </group>
   );
@@ -129,7 +146,7 @@ function debugCam(): [number, number, number] | null {
   if (typeof window === "undefined") return null;
   const q = new URLSearchParams(window.location.search);
   const c = q.get("cam");
-  const d = q.has("mock") ? 4.1 : 6; // mockups: tighter framing for reply images
+  const d = q.has("mock") || q.has("mocks") ? 4.1 : 6; // mockups: tighter framing for reply images
   return c === "rq" ? [-d * 0.82, 1.5, d * 0.62] : c === "rear" ? [-d, 1.6, 0.01] : c === "front" ? [d, 1.6, 0.01] : c === "side" ? [0.01, 1.6, d] : c === "side2" ? [0.01, 1.6, -d] : c === "top" ? [0.01, d + 1, 0.01] : null;
 }
 
@@ -158,7 +175,7 @@ function Turntable({ children, speed = 0.15 }: { children: React.ReactNode; spee
   return <group ref={ref}>{children}</group>;
 }
 
-export function Auto3D({ slots, onPick, className, film }: { slots: AutoSlotMap; onPick: (s: SlotState) => void; className?: string; film?: boolean }) {
+export function Auto3D({ slots, onPick, className, film, wrap, paint }: { slots: AutoSlotMap; onPick: (s: SlotState) => void; className?: string; film?: boolean; wrap?: boolean; paint?: AutoPaint }) {
   const dbg = debugCam();
   const base: [number, number, number] = dbg ?? (film ? [-3.5, 1.35, 2.05] : [-4.0, 1.55, 2.35]);
   return (
@@ -173,7 +190,7 @@ export function Auto3D({ slots, onPick, className, film }: { slots: AutoSlotMap;
         <Turntable speed={film ? (2 * Math.PI) / 5 : 0.18}>
           <Boundary>
             <Suspense fallback={null}>
-              <GlbRickshaw slots={slots} onPick={onPick} />
+              <GlbRickshaw slots={slots} onPick={onPick} wrap={wrap} paint={paint} />
             </Suspense>
           </Boundary>
         </Turntable>

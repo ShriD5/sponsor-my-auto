@@ -75,11 +75,24 @@ function drawContain(g: CanvasRenderingContext2D, img: HTMLImageElement, box: { 
   g.drawImage(img, box.x + (box.w - dw) / 2, box.y + (box.h - dh) / 2, dw, dh);
 }
 
-export async function drawSticker(slot: SlotState, aspect: number): Promise<HTMLCanvasElement> {
+export type StickerOpts = {
+  /** Full-wrap mockups: paint the artwork edge to edge with no card border, footer or price. */
+  wrap?: boolean;
+};
+
+export async function drawSticker(slot: SlotState, aspect: number, opts: StickerOpts = {}): Promise<HTMLCanvasElement> {
   // 2048 wide so the hood stays crisp when the camera is close; thin strips get the same width, less height
   const W = 2048, H = Math.max(192, Math.round(W / aspect));
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d")!;
+
+  if (opts.wrap && slot.sponsor) {
+    // artwork is pre-composed at this panel's aspect, so a straight stretch is exact
+    const img = await loadImage(slot.sponsor.logo);
+    if (img) g.drawImage(img, 0, 0, W, H);
+    return c;
+  }
+
   const display = cssFont("--font-titan", "Impact, sans-serif");
   const accent = cssFont("--font-kalam", "cursive");
   try { await document.fonts.ready; } catch {}
