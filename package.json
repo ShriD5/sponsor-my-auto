@@ -8,7 +8,9 @@
     "start": "next start",
     "db:push": "drizzle-kit push",
     "dodo:setup": "tsx --env-file=.env.local scripts/dodo-setup.ts",
-    "mockup": "node scripts/mockup.mjs"
+    "mockup": "node scripts/mockup.mjs",
+    "hf:video": "node scripts/hf-video.mjs",
+    "hf:stitch": "node scripts/hf-stitch.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
