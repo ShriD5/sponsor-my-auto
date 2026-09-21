@@ -13,13 +13,13 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 const API = "https://api.higgsfield.ai";
-const KEY = `${process.env.HF_API_KEY_ID}:${process.env.HF_API_KEY_SECRET}`;
-if (!process.env.HF_API_KEY_ID || !process.env.HF_API_KEY_SECRET) { console.error("set HF_API_KEY_ID and HF_API_KEY_SECRET (console.higgsfield.ai → API keys)"); process.exit(1); }
+const KEY = process.env.HF_CREDENTIALS || `${process.env.HF_API_KEY_ID}:${process.env.HF_API_KEY_SECRET}`;
+if (!KEY.includes(":") || KEY.startsWith("undefined")) { console.error("set HF_CREDENTIALS=key-id:key-secret in .env.local"); process.exit(1); }
 const dry = process.argv.includes("--dry");
 const res = process.argv.includes("--res") ? process.argv[process.argv.indexOf("--res") + 1] : "1080p";
 const DIR = join(homedir(), "Desktop/sponsor-my-auto-launch/higgsfield");
 const OUT = join(DIR, "clips"); mkdirSync(OUT, { recursive: true });
-const H = { Authorization: `Key ${KEY}`, "Content-Type": "application/json" };
+const H = { Authorization: `Key ${KEY}`, "Content-Type": "application/json", "User-Agent": "Mozilla/5.0 sponsormyauto/1.0" };
 
 // Scenes: start frame → where the auto goes. Text on the auto stays readable because the model animates from OUR render.
 const NEG = "blurry, distorted text, extra wheels, deformed vehicle, cartoon, low quality, watermark, changing logo, warped letters";
@@ -36,13 +36,13 @@ const SCENES = [
 
 async function estimate(s) {
   const r = await fetch(`${API}/estimate/kling-video/v3.0-turbo/image-to-video`, { method: "POST", headers: H, body: JSON.stringify({ prompt: s.prompt, image_url: "https://example.com/x.png", duration: s.duration, resolution: res }) });
-  return r.ok ? r.json() : { error: await r.text() };
+  return r.ok ? r.json() : { error: r.status, body: (await r.text()).slice(0, 120) };
 }
 async function upload(path) {
   const r = await fetch(`${API}/files/generate-upload-url`, { method: "POST", headers: H, body: JSON.stringify({ content_type: "image/png" }) });
   if (!r.ok) throw new Error("upload-url " + r.status + " " + await r.text());
   const u = await r.json();
-  const put = await fetch(u.upload_url, { method: "PUT", headers: u.upload_headers, body: readFileSync(path) });
+  const put = await fetch(u.upload_url, { method: "PUT", headers: { ...u.upload_headers, "User-Agent": "Mozilla/5.0 sponsormyauto/1.0" }, body: readFileSync(path) });
   if (!put.ok) throw new Error("put " + put.status);
   return u.public_url;
 }
