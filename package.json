@@ -10,9 +10,11 @@
     "dodo:setup": "tsx --env-file=.env.local scripts/dodo-setup.ts",
     "mockup": "node scripts/mockup.mjs",
     "hf:video": "node scripts/hf-video.mjs",
-    "hf:stitch": "node scripts/hf-stitch.mjs"
+    "hf:stitch": "node scripts/hf-stitch.mjs",
+    "hf:seedance": "tsx --env-file=.env.local scripts/hf-seedance-example.ts"
   },
   "dependencies": {
+    "@higgsfield/client": "^0.2.6",
     "@neondatabase/serverless": "^1.1.0",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
