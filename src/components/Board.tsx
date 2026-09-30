@@ -11,7 +11,7 @@ const Auto3D = dynamic(() => import("./Auto3D").then((m) => m.Auto3D), { ssr: fa
 
 type State = { slots: SlotState[]; raisedCents: number; live: number; visits: number; people: number; takeovers: number; saleEndsAt: string | null; wrapDay: string | null; mock: boolean };
 
-const MARQUEE = ["HORN OK PLEASE", "ONE AUTO", "A.K.A. TUK TUK", "SIX SLOTS", "30 DAYS", "8–12K EYEBALLS A DAY", "NO LOGIN", "TAKE IT FOR 2X", "EVERY DOLLAR BACK", "BENGALURU", "YOUR LOGO HERE"];
+const MARQUEE = ["BACK. AND CHEAPER.", "HORN OK PLEASE", "ONE AUTO", "WHOLE AUTO UNDER $1K", "A.K.A. TUK TUK", "SIX SLOTS", "30 DAYS", "8–12K EYEBALLS A DAY", "NO LOGIN", "TAKE IT FOR 2X", "EVERY DOLLAR BACK", "BENGALURU", "YOUR LOGO HERE"];
 
 export function Board({ initial }: { initial: State }) {
   const [state, setState] = useState(initial);
