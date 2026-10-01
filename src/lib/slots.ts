@@ -21,12 +21,12 @@ export const SLOT_DEFS: SlotDef[] = [
   },
   {
     id: "a1-side-l", autoId: "a1", kind: "side", name: "Left Side", short: "LEFT SIDE",
-    basePriceCents: 14900, tag: "FOOTPATH SIDE",
+    basePriceCents: 5900, tag: "FOOTPATH SIDE",
     lines: ["Vertical panel on the left of the canopy", "Faces the footpath and every bus stop", "Pedestrian eye level, close range", "~3 sq ft"],
   },
   {
     id: "a1-side-r", autoId: "a1", kind: "side", name: "Right Side", short: "RIGHT SIDE",
-    basePriceCents: 14900, tag: "TRAFFIC SIDE",
+    basePriceCents: 5900, tag: "TRAFFIC SIDE",
     lines: ["Vertical panel on the right of the canopy", "Faces overtaking bikes and cars", "Seen at every signal, every lane change", "~3 sq ft"],
   },
   {
